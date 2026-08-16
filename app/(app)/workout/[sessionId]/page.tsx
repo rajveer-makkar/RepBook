@@ -3,15 +3,15 @@ import { notFound } from "next/navigation";
 import WorkoutLogger from "@/components/Logging/WorkoutLogger";
 import { createClient, getUser } from "@/lib/supabase/server";
 
-export default async function WorkoutPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params;
+export default async function WorkoutPage({ params }: { params: Promise<{ sessionId: string }> }) {
+  const { sessionId } = await params;
   const user = await getUser();
   const supabase = await createClient();
 
   const { data: session } = await supabase
     .from("sessions")
     .select("id, status, workout_template_id")
-    .eq("id", id)
+    .eq("id", sessionId)
     .eq("user_id", user!.id)
     .single();
 
@@ -41,13 +41,13 @@ export default async function WorkoutPage({ params }: { params: Promise<{ id: st
       {session.status === "completed" ? (
         <div className="rounded-xl border border-zinc-200 bg-white p-6 text-center">
           <p className="text-sm text-zinc-500">This workout is already completed.</p>
-          <Link href={`/history/${id}`} className="mt-2 inline-block text-sm font-medium text-zinc-900 underline">
+          <Link href={`/history/${sessionId}`} className="mt-2 inline-block text-sm font-medium text-zinc-900 underline">
             View session
           </Link>
         </div>
       ) : (
         <WorkoutLogger
-          sessionId={id}
+          sessionId={sessionId}
           focus={template?.focus ?? "Workout"}
           exercises={(exercises ?? []).map((e) => ({
             id: e.id,

@@ -29,7 +29,7 @@ export default async function HistoryPage() {
             const logs = s.set_logs ?? [];
             const sets = logs.length;
             const volume = logs.reduce((sum, l) => sum + (l.weight_kg ?? 0) * (l.reps ?? 0), 0);
-            const focus = s.workout_templates?.[0]?.focus ?? "Workout";
+            const focus = (s.workout_templates as { focus?: string } | null)?.focus ?? "Workout";
             return (
               <Link
                 key={s.id}

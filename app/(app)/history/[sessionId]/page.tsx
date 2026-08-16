@@ -3,15 +3,15 @@ import { notFound } from "next/navigation";
 import { deleteSession } from "@/lib/actions/sessions";
 import { createClient, getUser } from "@/lib/supabase/server";
 
-export default async function SessionDetailPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params;
+export default async function SessionDetailPage({ params }: { params: Promise<{ sessionId: string }> }) {
+  const { sessionId } = await params;
   const user = await getUser();
   const supabase = await createClient();
 
   const { data: session } = await supabase
     .from("sessions")
     .select("id, started_at, completed_at, status, notes, workout_templates(focus)")
-    .eq("id", id)
+    .eq("id", sessionId)
     .eq("user_id", user!.id)
     .single();
   if (!session) notFound();
@@ -19,7 +19,7 @@ export default async function SessionDetailPage({ params }: { params: Promise<{ 
   const { data: logs } = await supabase
     .from("set_logs")
     .select("id, exercise_name, set_number, weight_kg, reps, rir_felt")
-    .eq("session_id", id)
+    .eq("session_id", sessionId)
     .order("set_number", { ascending: true });
 
   const byExercise = (logs ?? []).reduce<Record<string, NonNullable<typeof logs>>>((acc, log) => {
@@ -37,7 +37,9 @@ export default async function SessionDetailPage({ params }: { params: Promise<{ 
 
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-xl font-bold text-zinc-900">{session.workout_templates?.[0]?.focus ?? "Workout"}</h1>
+          <h1 className="text-xl font-bold text-zinc-900">
+            {(session.workout_templates as { focus?: string } | null)?.focus ?? "Workout"}
+          </h1>
           <p className="text-sm text-zinc-500">
             {new Date(session.started_at).toLocaleDateString(undefined, {
               weekday: "long",
@@ -46,7 +48,7 @@ export default async function SessionDetailPage({ params }: { params: Promise<{ 
             })}
           </p>
         </div>
-        <form action={deleteSession.bind(null, id)}>
+        <form action={deleteSession.bind(null, sessionId)}>
           <button
             type="submit"
             className="rounded-lg border border-red-200 px-3 py-2 text-sm font-semibold text-red-600 transition hover:bg-red-50"
