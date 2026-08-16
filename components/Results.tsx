@@ -109,61 +109,51 @@ function SwapPanel({
 
 function TrackerTable({ day, answers, onSwap }: { day: Program["workouts"][number]; answers?: Answers; onSwap?: Props["onSwap"] }) {
   const [swappingId, setSwappingId] = useState<string | null>(null);
-  const header = ["Exercise", "Set 1", "Set 2", "Set 3", "Set 4", "Target Reps", "Target RIR", "Rest", "Notes"];
   return (
-    <div className="overflow-x-auto rounded-lg border border-zinc-800">
-      <table className="w-full min-w-[720px] border-collapse text-left text-sm">
-        <thead>
-          <tr className="bg-zinc-800">
-            {header.map((h) => (
-              <th key={h} className="border-b border-zinc-800 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-zinc-400">
-                {h}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {day.exercises.map((e) => (
-            <tr key={e.id} className="border-b border-zinc-800 last:border-0">
-              <td className="px-3 py-2">
-                <div className="flex items-center gap-2">
-                  <span className="font-medium text-zinc-100">{e.name}</span>
-                  {onSwap && answers && (
-                    <button
-                      type="button"
-                      onClick={() => setSwappingId(swappingId === e.id ? null : e.id)}
-                      className="rounded border border-zinc-700 px-1.5 py-0.5 text-xs text-zinc-400 transition hover:border-zinc-500 hover:text-zinc-100"
-                    >
-                      Swap
-                    </button>
-                  )}
-                </div>
-                {swappingId === e.id && onSwap && answers && (
-                  <SwapPanel
-                    exerciseId={e.id}
-                    exerciseName={e.name}
-                    answers={answers}
-                    onCancel={() => setSwappingId(null)}
-                    onApply={(to, swapReason) => {
-                      onSwap?.({ from: e.id, to, reason: swapReason });
-                      setSwappingId(null);
-                    }}
-                  />
-                )}
-              </td>
-              {[1, 2, 3, 4].map((n) => (
-                <td key={n} className={`px-3 py-2 text-zinc-400 ${n > e.sets ? "bg-zinc-800" : ""}`}>
-                  {n <= e.sets ? "" : "—"}
-                </td>
-              ))}
-              <td className="px-3 py-2 whitespace-nowrap text-zinc-300">{e.reps}</td>
-              <td className="px-3 py-2 text-zinc-300">{e.rir}</td>
-              <td className="px-3 py-2 whitespace-nowrap text-zinc-300">{e.rest}</td>
-              <td className="px-3 py-2 text-xs text-zinc-400">{e.notes}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+    <div className="space-y-2">
+      {day.exercises.map((e) => (
+        <div key={e.id} className="rounded-lg border border-zinc-800 bg-zinc-900 p-3">
+          <div className="flex items-start justify-between gap-2">
+            <span className="font-medium text-zinc-100">{e.name}</span>
+            {onSwap && answers && (
+              <button
+                type="button"
+                onClick={() => setSwappingId(swappingId === e.id ? null : e.id)}
+                className="shrink-0 rounded border border-zinc-700 px-1.5 py-0.5 text-xs text-zinc-400 transition hover:border-zinc-500 hover:text-zinc-100"
+              >
+                Swap
+              </button>
+            )}
+          </div>
+          {swappingId === e.id && onSwap && answers && (
+            <SwapPanel
+              exerciseId={e.id}
+              exerciseName={e.name}
+              answers={answers}
+              onCancel={() => setSwappingId(null)}
+              onApply={(to, swapReason) => {
+                onSwap?.({ from: e.id, to, reason: swapReason });
+                setSwappingId(null);
+              }}
+            />
+          )}
+          <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-sm">
+            <span className="text-zinc-400">
+              <span className="font-semibold text-zinc-100">{e.sets} sets</span>
+            </span>
+            <span className="text-zinc-400">
+              <span className="font-semibold text-zinc-100">{e.reps}</span> reps
+            </span>
+            <span className="text-zinc-400">
+              <span className="font-semibold text-zinc-100">RIR {e.rir}</span>
+            </span>
+            <span className="text-zinc-400">
+              <span className="font-semibold text-zinc-100">{e.rest}</span>
+            </span>
+          </div>
+          {e.notes && <p className="mt-1.5 text-xs text-zinc-400">{e.notes}</p>}
+        </div>
+      ))}
     </div>
   );
 }
@@ -273,8 +263,8 @@ export default function Results({
 
       <section>
         <h2 className="mb-2 text-lg font-semibold text-zinc-100">Weekly schedule</h2>
-        <div className="overflow-x-auto rounded-lg border border-zinc-800">
-          <table className="w-full min-w-[480px] text-left text-sm">
+        <div className="overflow-hidden rounded-lg border border-zinc-800">
+          <table className="w-full text-left text-sm">
             <thead>
               <tr className="bg-zinc-800">
                 {["Day", "Focus", "Duration"].map((h) => (
