@@ -1,6 +1,9 @@
 import { createClient, getUser } from "@/lib/supabase/server";
 import { ProfileForm, SettingsForm } from "@/components/SettingsForms";
+import { saveMetric, deleteMetric } from "@/lib/actions/metrics";
 import { signOut } from "@/lib/actions/auth";
+
+const today = new Date().toISOString().slice(0, 10);
 
 export default async function SettingsPage() {
   const user = await getUser();
@@ -18,6 +21,18 @@ export default async function SettingsPage() {
     .eq("user_id", user!.id)
     .single();
 
+  const unit = settings?.unit ?? "kg";
+
+  const { data: metrics } = await supabase
+    .from("body_metrics")
+    .select("id, date, weight_kg, waist_cm, body_fat_pct")
+    .eq("user_id", user!.id)
+    .order("date", { ascending: false })
+    .limit(10);
+
+  const inputCls =
+    "w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none focus:border-zinc-500";
+
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-bold text-zinc-900">Settings</h1>
@@ -29,7 +44,54 @@ export default async function SettingsPage() {
 
       <section className="rounded-xl border border-zinc-200 bg-white p-5">
         <h2 className="mb-4 text-base font-semibold text-zinc-900">Units</h2>
-        <SettingsForm unit={settings?.unit ?? "kg"} />
+        <SettingsForm unit={unit} />
+      </section>
+
+      <section className="rounded-xl border border-zinc-200 bg-white p-5">
+        <h2 className="mb-4 text-base font-semibold text-zinc-900">Body metrics</h2>
+        <form action={saveMetric.bind(null, unit)} className="mb-4 grid grid-cols-2 gap-2">
+          <input type="number" name="weight" step="0.5" required placeholder={`Weight (${unit})`} className={inputCls} />
+          <input type="number" name="waist" step="0.5" placeholder="Waist (cm)" className={inputCls} />
+          <input type="number" name="bodyFat" step="0.1" min="0" max="60" placeholder="Body fat %" className={inputCls} />
+          <input type="date" name="date" defaultValue={today} className={inputCls} />
+          <button
+            type="submit"
+            className="col-span-2 rounded-lg bg-zinc-900 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-zinc-700"
+          >
+            Log today
+          </button>
+        </form>
+        {!metrics || metrics.length === 0 ? (
+          <p className="text-sm text-zinc-500">No entries yet. Weigh in on the same time of day for consistent trends.</p>
+        ) : (
+          <div className="space-y-2">
+            {metrics.map((m) => {
+              const kg = Number(m.weight_kg);
+              const w = unit === "lb" ? Math.round(kg * 2.20462 * 2) / 2 : kg;
+              return (
+                <div key={m.id} className="flex items-center justify-between rounded-lg bg-zinc-50 px-3 py-2 text-sm">
+                  <div>
+                    <span className="font-semibold text-zinc-900">
+                      {w} {unit}
+                    </span>
+                    {m.waist_cm && <span className="ml-2 text-zinc-500">waist {m.waist_cm} cm</span>}
+                    {m.body_fat_pct != null && <span className="ml-2 text-zinc-500">BF {m.body_fat_pct}%</span>}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-zinc-400">
+                      {new Date(m.date + "T12:00:00").toLocaleDateString(undefined, { month: "short", day: "numeric" })}
+                    </span>
+                    <form action={deleteMetric.bind(null, m.id)}>
+                      <button type="submit" className="text-xs font-semibold text-zinc-400 hover:text-red-600">
+                        ✕
+                      </button>
+                    </form>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </section>
 
       <section className="rounded-xl border border-zinc-200 bg-white p-5">

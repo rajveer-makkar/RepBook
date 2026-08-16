@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { cn } from "@/lib/cn";
 import { createClient, getUser } from "@/lib/supabase/server";
 
 export default async function HistoryPage() {
@@ -14,9 +15,66 @@ export default async function HistoryPage() {
     .order("started_at", { ascending: false })
     .limit(30);
 
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = now.getMonth();
+  const monthStart = new Date(year, month, 1).toISOString();
+  const monthEnd = new Date(year, month + 1, 1).toISOString();
+  const { data: monthSessions } = await supabase
+    .from("sessions")
+    .select("started_at")
+    .eq("user_id", user!.id)
+    .eq("status", "completed")
+    .gte("started_at", monthStart)
+    .lt("started_at", monthEnd);
+
+  const workoutDays = new Set(
+    (monthSessions ?? []).map(
+      (s) => new Date(s.started_at).toLocaleDateString("en-US")
+    )
+  );
+  const firstWeekday = new Date(year, month, 1).getDay();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const todayKey = now.toLocaleDateString("en-US");
+
   return (
     <div className="space-y-4">
       <h1 className="text-2xl font-bold text-zinc-900">History</h1>
+
+      <section className="rounded-xl border border-zinc-200 bg-white p-4">
+        <p className="mb-3 text-sm font-semibold text-zinc-900">
+          {now.toLocaleDateString(undefined, { month: "long", year: "numeric" })}
+        </p>
+        <div className="grid grid-cols-7 gap-1 text-center text-[11px] text-zinc-400">
+          {["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"].map((d) => (
+            <span key={d} className="pb-1">{d}</span>
+          ))}
+          {Array.from({ length: firstWeekday }).map((_, i) => (
+            <span key={`blank-${i}`} />
+          ))}
+          {Array.from({ length: daysInMonth }).map((_, i) => {
+            const day = i + 1;
+            const key = new Date(year, month, day).toLocaleDateString("en-US");
+            const trained = workoutDays.has(key);
+            const isToday = key === todayKey;
+            return (
+              <div
+                key={key}
+                className={cn(
+                  "flex aspect-square items-center justify-center rounded-lg text-sm",
+                  trained
+                    ? "bg-zinc-900 text-white font-semibold"
+                    : "text-zinc-700",
+                  isToday && !trained && "border border-zinc-300"
+                )}
+              >
+                {day}
+              </div>
+            );
+          })}
+        </div>
+      </section>
+
       {!sessions || sessions.length === 0 ? (
         <div className="rounded-xl border border-dashed border-zinc-300 bg-white p-8 text-center">
           <p className="text-sm text-zinc-500">
