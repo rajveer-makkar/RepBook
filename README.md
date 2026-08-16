@@ -56,8 +56,6 @@ Open http://localhost:3000.
 | `ANTHROPIC_API_KEY` | No | Powers the "AI explain" button (Anthropic) |
 | `OPENAI_API_KEY` | No | Alternative to Anthropic for the "AI explain" button |
 
-The "AI explain" feature degrades gracefully: with no key configured the button is disabled and the feature is skipped — the engine still generates full programs.
-
 ## How the engine works
 
 1. **Questionnaire** → a typed `Answers` profile (~40 fields): goals & priorities, weekly availability, experience and 1RMs, equipment, muscle-group and exercise preferences, pain/injury restrictions, recovery/lifestyle signals.
