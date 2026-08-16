@@ -4,10 +4,24 @@ import { enhanceProse, hasApiKey } from "@/lib/llm";
 import { getUser } from "@/lib/supabase/server";
 import type { Answers } from "@/lib/types";
 
+// ponytail: in-memory cooldown — per lambda instance, not global. Good enough to
+// blunt abuse on a single-user app; swap to a DB-backed limiter if instances scale.
+const COOLDOWN_MS = 30_000;
+const lastEnhance = new Map<string, number>();
+
 export async function POST(req: Request) {
   const user = await getUser();
   if (!user)
     return NextResponse.json({ ok: false, error: "Sign in to use AI enhancement." }, { status: 401 });
+
+  const last = lastEnhance.get(user.id);
+  const now = Date.now();
+  if (last && now - last < COOLDOWN_MS)
+    return NextResponse.json(
+      { ok: false, error: "You can ask for another explanation in a moment." },
+      { status: 429 }
+    );
+  lastEnhance.set(user.id, now);
 
   let answers: Answers;
   try {
