@@ -41,12 +41,6 @@ npm run dev
 
 Open http://localhost:3000.
 
-### 3. Deploy to Vercel
-
-1. Import the repo at [vercel.com/new](https://vercel.com/new).
-2. Add the same environment variables from the table below.
-3. Deploy — done. No build config needed (Next.js defaults handle it).
-
 ## Environment variables
 
 | Variable | Required | Description |
