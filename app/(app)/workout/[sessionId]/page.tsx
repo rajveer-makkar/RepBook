@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import WorkoutLogger from "@/components/Logging/WorkoutLogger";
+import { suggestForWorkout } from "@/lib/progression";
 import { createClient, getUser } from "@/lib/supabase/server";
 
 export default async function WorkoutPage({ params }: { params: Promise<{ sessionId: string }> }) {
@@ -33,6 +34,41 @@ export default async function WorkoutPage({ params }: { params: Promise<{ sessio
         .order("position", { ascending: true })
     : { data: [] };
 
+  const suggestions: Record<string, ReturnType<typeof suggestForWorkout>[string]> = {};
+  if (template && exercises && exercises.length > 0) {
+    const { data: lastSession } = await supabase
+      .from("sessions")
+      .select("id")
+      .eq("user_id", user!.id)
+      .eq("status", "completed")
+      .eq("workout_template_id", template.id)
+      .neq("id", sessionId)
+      .order("started_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (lastSession) {
+      const { data: lastLogs } = await supabase
+        .from("set_logs")
+        .select("exercise_template_id, weight_kg, reps, rir_felt")
+        .eq("session_id", lastSession.id)
+        .order("set_number", { ascending: true });
+      if (lastLogs) {
+        const byExercise = lastLogs.reduce<Record<string, typeof lastLogs>>((acc, l) => {
+          if (l.exercise_template_id) (acc[l.exercise_template_id] ??= []).push(l);
+          return acc;
+        }, {});
+        Object.assign(
+          suggestions,
+          suggestForWorkout(
+            exercises.map((e) => ({ id: e.id, name: e.name, repsMin: e.reps_min, repsMax: e.reps_max })),
+            byExercise
+          )
+        );
+      }
+    }
+  }
+
   return (
     <div className="space-y-4">
       <Link href="/dashboard" className="text-sm font-medium text-zinc-500 hover:text-zinc-900">
@@ -49,6 +85,7 @@ export default async function WorkoutPage({ params }: { params: Promise<{ sessio
         <WorkoutLogger
           sessionId={sessionId}
           focus={template?.focus ?? "Workout"}
+          suggestions={suggestions}
           exercises={(exercises ?? []).map((e) => ({
             id: e.id,
             name: e.name,

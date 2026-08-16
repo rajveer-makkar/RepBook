@@ -2,8 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Notification01Icon } from "hugeicons-react";
+import { Notification01Icon, ArrowUp01Icon, ArrowDown01Icon } from "hugeicons-react";
 import { completeSession } from "@/lib/actions/sessions";
+import type { Suggestion } from "@/lib/progression";
 import Button from "@/components/ui/Button";
 import { cn } from "@/lib/cn";
 
@@ -21,6 +22,7 @@ interface Props {
   sessionId: string;
   focus: string;
   exercises: LoggerExercise[];
+  suggestions?: Record<string, Suggestion | null>;
 }
 
 interface SetEntry {
@@ -57,7 +59,7 @@ function formatTime(total: number): string {
   return `${m}:${String(s).padStart(2, "0")}`;
 }
 
-export default function WorkoutLogger({ sessionId, focus, exercises }: Props) {
+export default function WorkoutLogger({ sessionId, focus, exercises, suggestions = {} }: Props) {
   const router = useRouter();
   const [entries, setEntries] = useState<SetEntry[][]>(() => emptyEntries(exercises));
   const [saving, setSaving] = useState(false);
@@ -210,7 +212,9 @@ export default function WorkoutLogger({ sessionId, focus, exercises }: Props) {
       )}
 
       <div className="space-y-3">
-        {exercises.map((ex, exIdx) => (
+        {exercises.map((ex, exIdx) => {
+          const s = suggestions[ex.id];
+          return (
           <div key={ex.id} id={`ex-${exIdx}`} className="rounded-xl border border-zinc-200 bg-white p-4">
             <div className="mb-3 flex items-baseline justify-between">
               <p className="font-semibold text-zinc-900">{ex.name}</p>
@@ -218,6 +222,20 @@ export default function WorkoutLogger({ sessionId, focus, exercises }: Props) {
                 {ex.sets}×{ex.reps} · RIR {ex.rir} · rest {Math.round(ex.restSec / 60)}m
               </p>
             </div>
+            {s && (
+              <div
+                className={cn(
+                  "mb-3 flex items-start gap-1.5 rounded-lg px-3 py-2 text-xs",
+                  s.action === "up" && "bg-emerald-50 text-emerald-700",
+                  s.action === "hold" && "bg-zinc-50 text-zinc-600",
+                  s.action === "down" && "bg-amber-50 text-amber-700"
+                )}
+              >
+                {s.action === "up" && <ArrowUp01Icon size={14} className="mt-0.5 shrink-0" />}
+                {s.action === "down" && <ArrowDown01Icon size={14} className="mt-0.5 shrink-0" />}
+                <span>{s.reason}</span>
+              </div>
+            )}
             <div className="space-y-2">
               {entries[exIdx].map((set, setIdx) => (
                 <div
@@ -271,7 +289,8 @@ export default function WorkoutLogger({ sessionId, focus, exercises }: Props) {
             </div>
             {ex.notes && <p className="mt-2 text-xs text-zinc-400">{ex.notes}</p>}
           </div>
-        ))}
+          );
+        })}
       </div>
 
       {rest.active && (

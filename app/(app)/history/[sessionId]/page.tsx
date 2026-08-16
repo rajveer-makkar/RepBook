@@ -29,6 +29,43 @@ export default async function SessionDetailPage({ params }: { params: Promise<{ 
 
   const totalVolume = (logs ?? []).reduce((sum, l) => sum + (l.weight_kg ?? 0) * (l.reps ?? 0), 0);
 
+  const exerciseNames = Object.keys(byExercise);
+  const progressionByExercise: Record<string, { date: string; weight: number }[]> = {};
+  if (exerciseNames.length > 0) {
+    const { data: recent } = await supabase
+      .from("sessions")
+      .select("id, started_at")
+      .eq("user_id", user!.id)
+      .eq("status", "completed")
+      .order("started_at", { ascending: false })
+      .limit(5);
+    if (recent && recent.length > 0) {
+      const { data: recentLogs } = await supabase
+        .from("set_logs")
+        .select("session_id, exercise_name, weight_kg")
+        .in("exercise_name", exerciseNames)
+        .in(
+          "session_id",
+          recent.map((s) => s.id)
+        );
+      const dateBySession = new Map(recent.map((s) => [s.id, s.started_at]));
+      const topBySession = new Map<string, number>();
+      for (const log of recentLogs ?? []) {
+        if (!log.weight_kg || !log.exercise_name) continue;
+        const key = `${log.session_id}|${log.exercise_name}`;
+        topBySession.set(key, Math.max(topBySession.get(key) ?? 0, log.weight_kg));
+      }
+      for (const [key, weight] of topBySession) {
+        const [sessionId, name] = key.split("|");
+        const date = new Date(dateBySession.get(sessionId) ?? "").toLocaleDateString(undefined, {
+          month: "short",
+          day: "numeric",
+        });
+        (progressionByExercise[name] ??= []).push({ date, weight });
+      }
+    }
+  }
+
   return (
     <div className="space-y-4">
       <Link href="/history" className="text-sm font-medium text-zinc-500 hover:text-zinc-900">
@@ -74,6 +111,18 @@ export default async function SessionDetailPage({ params }: { params: Promise<{ 
         {Object.entries(byExercise).map(([name, sets]) => (
           <div key={name} className="rounded-xl border border-zinc-200 bg-white p-4">
             <p className="mb-2 font-semibold text-zinc-900">{name}</p>
+            {(progressionByExercise[name] ?? []).length > 0 && (
+              <div className="mb-3 flex flex-wrap gap-1.5">
+                {progressionByExercise[name].map((p) => (
+                  <span
+                    key={p.date + p.weight}
+                    className="rounded-md bg-zinc-100 px-2 py-1 text-[11px] font-medium text-zinc-600"
+                  >
+                    {p.date} · {p.weight}kg
+                  </span>
+                ))}
+              </div>
+            )}
             <div className="space-y-1">
               {sets.map((log) => (
                 <div key={log.id} className="flex items-center gap-3 text-sm">
