@@ -32,7 +32,7 @@ export default async function SettingsPage() {
     .limit(10);
 
   const inputCls =
-    "w-full rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-zinc-100 outline-none focus:border-zinc-500";
+    "w-full min-w-0 rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-zinc-100 outline-none focus:border-zinc-500";
 
   return (
     <div className="space-y-6">
