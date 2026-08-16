@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { Notification01Icon } from "hugeicons-react";
 import { completeSession } from "@/lib/actions/sessions";
 import Button from "@/components/ui/Button";
 import { cn } from "@/lib/cn";
@@ -58,18 +59,7 @@ function formatTime(total: number): string {
 
 export default function WorkoutLogger({ sessionId, focus, exercises }: Props) {
   const router = useRouter();
-  const [entries, setEntries] = useState<SetEntry[][]>(() => {
-    try {
-      const raw = localStorage.getItem(STORAGE_PREFIX + sessionId);
-      if (raw) {
-        const parsed = JSON.parse(raw);
-        if (Array.isArray(parsed) && parsed.length === exercises.length) return parsed;
-      }
-    } catch {
-      /* ignore */
-    }
-    return emptyEntries(exercises);
-  });
+  const [entries, setEntries] = useState<SetEntry[][]>(() => emptyEntries(exercises));
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | undefined>();
   const [elapsed, setElapsed] = useState(0);
@@ -98,6 +88,20 @@ export default function WorkoutLogger({ sessionId, focus, exercises }: Props) {
     }, 250);
     return () => clearInterval(id);
   }, [rest, focus]);
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(STORAGE_PREFIX + sessionId);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed) && parsed.length === exercises.length)
+          // eslint-disable-next-line react-hooks/set-state-in-effect -- one-time draft hydration from localStorage
+          setEntries(parsed);
+      }
+    } catch {
+      /* ignore */
+    }
+  }, [sessionId, exercises]);
 
   useEffect(() => {
     try {
@@ -186,9 +190,10 @@ export default function WorkoutLogger({ sessionId, focus, exercises }: Props) {
         </div>
         <button
           onClick={askNotify}
-          className="rounded-lg border border-zinc-300 px-3 py-1.5 text-xs font-medium text-zinc-600"
+          className="flex items-center gap-1.5 rounded-lg border border-zinc-300 px-3 py-1.5 text-xs font-medium text-zinc-600"
         >
-          🔔 Rest alerts
+          <Notification01Icon size={15} />
+          Rest alerts
         </button>
       </div>
 
