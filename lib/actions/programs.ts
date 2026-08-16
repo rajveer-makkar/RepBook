@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { buildProgram } from "@/lib/engine";
 import { createClient, getUser } from "@/lib/supabase/server";
-import type { Answers } from "@/lib/types";
+import type { Answers, ExerciseSwap } from "@/lib/types";
 
 export interface SaveResult {
   ok: boolean;
@@ -102,6 +102,34 @@ export async function setActiveProgram(id: string) {
 
   revalidatePath("/programs");
   revalidatePath("/dashboard");
+}
+
+export async function updateProgramSwaps(id: string, swaps: ExerciseSwap[]) {
+  const user = await getUser();
+  if (!user) return { ok: false, error: "Not signed in." };
+  const supabase = await createClient();
+
+  const { data: existing } = await supabase
+    .from("programs")
+    .select("answers")
+    .eq("id", id)
+    .eq("user_id", user.id)
+    .single();
+  if (!existing) return { ok: false, error: "Program not found." };
+
+  const answers = { ...(existing.answers as Answers), swaps };
+
+  const { error } = await supabase
+    .from("programs")
+    .update({ answers })
+    .eq("id", id)
+    .eq("user_id", user.id);
+  if (error) return { ok: false, error: error.message };
+
+  revalidatePath(`/programs/${id}`);
+  revalidatePath("/programs");
+  revalidatePath("/dashboard");
+  return { ok: true };
 }
 
 export async function deleteProgram(id: string) {

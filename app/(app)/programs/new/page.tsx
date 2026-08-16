@@ -7,7 +7,7 @@ import Questionnaire from "@/components/Questionnaire";
 import Results from "@/components/Results";
 import { buildProgram } from "@/lib/engine";
 import { saveProgram } from "@/lib/actions/programs";
-import type { Answers, Program } from "@/lib/types";
+import type { Answers, ExerciseSwap, Program } from "@/lib/types";
 
 const STORAGE_KEY = "workout-answers";
 
@@ -32,6 +32,13 @@ export default function NewProgramPage() {
     setAiRationale(undefined);
     setAiError(undefined);
     window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const handleSwap = (swap: ExerciseSwap) => {
+    if (!answers || !program) return;
+    const next: Answers = { ...answers, swaps: [...(answers.swaps ?? []), swap] };
+    setAnswers(next);
+    setProgram(buildProgram(next));
   };
 
   const enhance = async () => {
@@ -83,6 +90,8 @@ export default function NewProgramPage() {
       </Link>
       <Results
         program={program}
+        answers={answers ?? undefined}
+        onSwap={handleSwap}
         aiRationale={aiRationale}
         aiLoading={aiLoading}
         aiError={aiError}

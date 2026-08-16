@@ -41,6 +41,26 @@ export type Pattern =
   | "rear-delt"
   | "chest-iso";
 
+export type ExperienceLevel = "beginner" | "novice" | "intermediate" | "advanced";
+export type GymType = "home" | "commercial";
+export type IntensityPref = "easy" | "moderate" | "hard";
+export type RecoveryLevel = "low" | "medium" | "high";
+export type Severity = "mild" | "moderate" | "severe";
+export type CorePref = "auto" | "yes" | "no";
+export type CardioPref = "none" | "steady" | "hiit";
+export type SwapReason = "equipment" | "injury" | "pain" | "dislike" | "other";
+
+export interface InjuryDetail {
+  severity: Severity;
+  aggravating: string;
+}
+
+export interface ExerciseSwap {
+  from: string;
+  to: string;
+  reason: SwapReason;
+}
+
 export interface Answers {
   age: string;
   sex: Sex;
@@ -49,6 +69,7 @@ export interface Answers {
   bodyFatPct?: string;
 
   goal: Goal;
+  goalRank?: Goal[];
   targetWeightKg?: string;
   timelineMonths?: string;
   priority: Priority;
@@ -56,32 +77,50 @@ export interface Answers {
   daysPerWeek: number;
   sessionMin: number;
   preferredDays: string[];
+  preferredDaysFixed?: boolean;
   needRestSpacing: boolean;
+  maxConsecutiveDays?: number;
 
   experienceYears: string;
+  experienceLevel?: ExperienceLevel;
   structuredPrograms: boolean;
+  knowsRir?: boolean;
   benchKg?: string;
   pullups?: string;
   squatKg?: string;
   deadliftKg?: string;
+  ohpKg?: string;
 
+  gymType?: GymType;
   equipment: EquipmentId[];
   equipmentPref: "machines" | "free-weights" | "combination";
 
   cannotDo: string[];
   priorityMuscles: MuscleId[];
+  maintainMuscles?: MuscleId[];
+  dislikedExercises?: string[];
+  enjoyedExercises?: string[];
   avoidNearFailure: boolean;
+  intensityPref?: IntensityPref;
 
   injuries: InjuryId[];
-  prefersSplit?: "auto" | "ppl" | "upper-lower" | "full-body";
+  injuryDetails?: Partial<Record<InjuryId, InjuryDetail>>;
 
+  recoveryLevel?: RecoveryLevel;
+  sleepQuality?: string;
+  proteinIntake?: string;
   dailySteps: string;
   sleepHours: string;
   sports?: string;
   dieting: boolean;
 
+  prefersSplit?: "auto" | "ppl" | "upper-lower" | "upper-lower-accessories" | "full-body";
   includeCardio: boolean;
   includeCore: boolean;
+  corePref?: CorePref;
+  cardioPref?: CardioPref;
+
+  swaps?: ExerciseSwap[];
 }
 
 export interface Exercise {
@@ -137,4 +176,5 @@ export interface Program {
   core: string;
   substitutions: Substitution[];
   twelveWeek: { weeks: string; focus: string }[];
+  warnings: string[];
 }

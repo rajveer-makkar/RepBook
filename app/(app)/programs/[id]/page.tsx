@@ -1,9 +1,10 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import Results from "@/components/Results";
+import ProgramSwapper from "@/components/ProgramSwapper";
 import { buildProgram } from "@/lib/engine";
 import { deleteProgram, setActiveProgram } from "@/lib/actions/programs";
 import { createClient, getUser } from "@/lib/supabase/server";
+import type { Answers } from "@/lib/types";
 
 export default async function ProgramDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -59,8 +60,10 @@ export default async function ProgramDetailPage({ params }: { params: Promise<{ 
         </div>
       </div>
 
-      <Results
+      <ProgramSwapper
+        programId={id}
         program={{ ...generated, title, rationale: program.rationale || generated.rationale }}
+        answers={program.answers as Answers}
       />
     </div>
   );

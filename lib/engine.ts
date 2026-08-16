@@ -2,8 +2,14 @@ import { EXERCISES, byId } from "./exercises";
 import type {
   Answers,
   Exercise,
+  ExerciseSwap,
+  ExperienceLevel,
+  IntensityPref,
+  MuscleId,
   Pattern,
   Program,
+  RecoveryLevel,
+  SwapReason,
   WorkoutDay,
   WorkoutExercise,
 } from "./types";
@@ -108,6 +114,20 @@ const LOWER: DayTemplate = {
   ],
 };
 
+const ACCESSORIES: DayTemplate = {
+  id: "accessories",
+  focus: "Accessories (Arms / Shoulders / Calves)",
+  slots: [
+    { pattern: "lateral", sets: 3, reps: "12-15", rir: 0, rest: "60s", prefer: ["lateral-cable", "lateral-db"], notes: "Light, strict." },
+    { pattern: "rear-delt", sets: 3, reps: "12-15", rir: 0, rest: "60s", prefer: ["face-pull", "reverse-pec-deck"], notes: "Shoulder health, keep light." },
+    { pattern: "biceps", sets: 3, reps: "10-12", rir: 1, rest: "60-90s", prefer: ["preacher-db", "ez-curl", "cable-curl"], notes: "" },
+    { pattern: "triceps", sets: 3, reps: "10-12", rir: 1, rest: "60-90s", prefer: ["rope-pushdown", "machine-triceps"], notes: "" },
+    { pattern: "biceps", sets: 3, reps: "12-15", rir: 0, rest: "60s", prefer: ["cable-curl", "ez-curl"], notes: "Finisher." },
+    { pattern: "triceps", sets: 3, reps: "12-15", rir: 0, rest: "60s", prefer: ["overhead-cable-ext", "rope-pushdown"], notes: "Stretch-focused finisher." },
+    { pattern: "calf", sets: 3, reps: "10-15", rir: 1, rest: "60s", prefer: ["calf-standing", "calf-seated"], notes: "" },
+  ],
+};
+
 const FULL_BODY_A: DayTemplate = {
   id: "full-a",
   focus: "Full Body A",
@@ -136,6 +156,30 @@ const FULL_BODY_B: DayTemplate = {
   ],
 };
 
+// ---- Profile helpers ------------------------------------------------------
+export function resolveExperienceLevel(a: Answers): ExperienceLevel {
+  if (a.experienceLevel) return a.experienceLevel;
+  const years = Number(a.experienceYears || 0);
+  if (years >= 3) return "advanced";
+  if (years >= 1) return "intermediate";
+  if (a.structuredPrograms) return "novice";
+  return "beginner";
+}
+
+export function resolveRecoveryLevel(a: Answers): RecoveryLevel {
+  if (a.recoveryLevel) return a.recoveryLevel;
+  const sleep = Number(a.sleepHours || 0);
+  const steps = /10k\+|9-10k/.test(a.dailySteps) ? 2 : /7-8k/.test(a.dailySteps) ? 1 : 0;
+  if (sleep >= 8 && steps === 2) return "high";
+  if (sleep < 6 || steps === 0) return "low";
+  return "medium";
+}
+
+export function resolveIntensityPref(a: Answers): IntensityPref {
+  if (a.intensityPref) return a.intensityPref;
+  return a.avoidNearFailure ? "easy" : "moderate";
+}
+
 // ---- Split selection -------------------------------------------------------
 interface Split {
   days: number;
@@ -145,7 +189,7 @@ interface Split {
 
 function pickSplit(a: Answers): Split {
   const pref = a.prefersSplit;
-  const experienced = Number(a.experienceYears || 0) >= 1 || a.structuredPrograms;
+  const experienced = resolveExperienceLevel(a) === "intermediate" || resolveExperienceLevel(a) === "advanced";
   switch (a.daysPerWeek) {
     case 1:
       return { days: 1, label: "Full Body x1", templateIds: ["full-a"] };
@@ -154,10 +198,16 @@ function pickSplit(a: Answers): Split {
     case 3:
       if (pref === "full-body" || (!pref && !experienced))
         return { days: 3, label: "Full Body A/B/A", templateIds: ["full-a", "full-b", "full-a"] };
+      if (pref === "upper-lower-accessories")
+        return { days: 3, label: "Upper / Lower / Accessories", templateIds: ["upper", "lower", "accessories"] };
       return { days: 3, label: "Push / Pull / Legs", templateIds: ["push", "pull", "legs"] };
     case 4:
+      if (pref === "upper-lower-accessories")
+        return { days: 4, label: "Upper / Lower / Upper / Accessories", templateIds: ["upper", "lower", "upper", "accessories"] };
       return { days: 4, label: "Upper / Lower / Upper / Lower", templateIds: ["upper", "lower", "upper", "lower"] };
     case 5:
+      if (pref === "upper-lower-accessories")
+        return { days: 5, label: "Upper / Lower / Upper / Accessories / Lower", templateIds: ["upper", "lower", "upper", "accessories", "lower"] };
       return { days: 5, label: "Push / Pull / Legs / Upper / Lower", templateIds: ["push", "pull", "legs", "upper", "lower"] };
     case 6:
       return { days: 6, label: "Push / Pull / Legs x2", templateIds: ["push", "pull", "legs", "push", "pull", "legs"] };
@@ -184,6 +234,7 @@ function available(e: Exercise, a: Answers): boolean {
 function banned(e: Exercise, a: Answers): boolean {
   const name = e.name.toLowerCase();
   if (a.cannotDo.some((c) => name.includes(c.toLowerCase()) || e.id === c)) return true;
+  if (a.dislikedExercises?.some((c) => name.includes(c.toLowerCase()) || e.id === c)) return true;
   if (e.risk && e.risk.some((r) => a.injuries.includes(r))) return true;
   return false;
 }
@@ -193,6 +244,7 @@ function score(e: Exercise, a: Answers): number {
   if (a.equipmentPref === "machines" && e.equipment.some((q) => q === "machine" || q === "smith" || q === "leg-press")) s += 3;
   if (a.equipmentPref === "free-weights" && e.equipment.some((q) => q === "barbell" || q === "dumbbell")) s += 3;
   if (a.equipmentPref === "combination") s += 1;
+  if (a.gymType === "home" && e.equipment.every((q) => q === "barbell" || q === "dumbbell")) s += 1;
   if (e.soloSafe) s += 2;
   return s;
 }
@@ -220,18 +272,36 @@ const SOLO_UNSAFE = new Set(["db-chest-press"]);
 function buildDay(template: DayTemplate, a: Answers): WorkoutDay {
   const used = new Set<string>();
   const exercises: WorkoutExercise[] = [];
+  const recovery = resolveRecoveryLevel(a);
+  const intensity = resolveIntensityPref(a);
+  const beginner = resolveExperienceLevel(a) === "beginner";
+
   for (const slot of template.slots) {
-    if (slot.core && !a.includeCore) continue;
+    const isCore = slot.core === true;
+    const wantsCore = a.corePref === "no" ? false : a.includeCore || a.corePref === "yes";
+    if (isCore && !wantsCore) continue;
+
+    let sets = slot.sets;
+    // recovery: low recovery shaves a set off isolation work; beginners cap compounds at 3
+    if (isCore || ISO.has(slot.pattern)) {
+      if (recovery === "low" && sets > 2) sets -= 1;
+    } else if (beginner && sets > 3) {
+      sets -= 1;
+    }
+
     const e = pickFor(slot, a, used);
     used.add(e.id);
-    const compound = !ISO.has(slot.pattern);
-    const rir = slot.rir + (a.avoidNearFailure && compound ? 1 : 0);
+    const compound = !ISO.has(slot.pattern) && !isCore;
+    const rirDelta = intensity === "easy" ? 1 : intensity === "hard" ? -1 : 0;
+    const rir = Math.max(0, slot.rir + (compound ? rirDelta : 0));
     let notes = slot.notes ?? e.notes ?? "";
     if (SOLO_UNSAFE.has(e.id)) notes = (notes ? notes + " " : "") + "Needs a spotter — swap if alone.";
+    if (a.gymType === "home" && !e.soloSafe)
+      notes = (notes ? notes + " " : "") + "Home gym — have a spotter or safety catch.";
     exercises.push({
       id: e.id,
       name: e.name,
-      sets: slot.sets,
+      sets,
       reps: slot.reps,
       rir,
       rest: slot.rest,
@@ -309,26 +379,31 @@ function volumeReason(muscle: string): string {
 }
 
 function buildRationale(a: Answers, split: Split): string {
-  const experienced = Number(a.experienceYears || 0) >= 1 || a.structuredPrograms;
+  const level = resolveExperienceLevel(a);
+  const recovery = resolveRecoveryLevel(a);
   const parts: string[] = [];
   parts.push(
-    experienced
-      ? `You've been training long enough that junk volume and random bro-split days will slow you down. You need real progressive overload, controlled fatigue, and enough volume to grow — not more.`
-      : `You're early enough in training that consistency and technique will carry you further than clever programming. Keep it simple, add a little weight or a rep most sessions, and don't chase fatigue.`
+    level === "beginner" || level === "novice"
+      ? `You're early enough in training that consistency and technique will carry you further than clever programming. Keep it simple, add a little weight or a rep most sessions, and don't chase fatigue.`
+      : `You've been training long enough that junk volume and random bro-split days will slow you down. You need real progressive overload, controlled fatigue, and enough volume to grow — not more.`
   );
   parts.push(
     `Your schedule splits cleanly into ${split.label}. Every major muscle group gets trained twice a week (the hypertrophy sweet spot) and your rest days land where recovery matters most.`
   );
+  if (recovery === "low")
+    parts.push(`Your sleep and daily activity suggest limited recovery capacity right now, so isolation volume is deliberately trimmed — more sets won't grow if you can't recover. Fix sleep before adding volume.`);
   if (a.dieting || a.goal === "fat-loss" || a.goal === "recomp")
     parts.push(`You're training while eating at a deficit — recovery capacity is lower than when bulking, so this program is deliberately moderate volume. More sets ≠ more growth here.`);
   if (a.injuries.includes("knees"))
     parts.push(`Knee-loading movements are dosed moderately and biased toward machines and guided bar paths (leg press, smith/hack squat) rather than heavy free-weight squatting. If a specific movement bothers your knees, use the substitutions instead of pushing through.`);
   if (a.injuries.length === 0 && a.equipment.includes("barbell"))
     parts.push(`No conventional deadlifts or barbell RDLs — hip thrusts and cable pull-throughs give the same hamstring/glute stimulus with far less risk training solo.`);
+  if (a.gymType === "home")
+    parts.push(`Home gym in mind: exercises lean toward free weights and moves that don't need a machine lineup, and anything requiring a spotter has a substitution.`);
   return parts.join(" ");
 }
 
-function buildProgression(): string[] {
+function buildProgression(a: Answers): string[] {
   const x: string[] = [];
   x.push("Use double progression on every exercise:");
   x.push("1. Start at a weight where you can hit the BOTTOM of each rep range with the prescribed RIR.");
@@ -340,8 +415,10 @@ function buildProgression(): string[] {
   x.push("   - Lower isolation (leg curl, extension, calves): +2.5-5kg");
   x.push("4. After a weight jump your reps will drop toward the bottom of the range — expected. Build back up, then jump again.");
   x.push("5. If you miss the rep target at the bottom of the range even at target RIR, repeat the same weight next session. One bad day usually means fatigue, sleep, or nutrition — not regression.");
-  x.push("6. RIR over time: early sets stay at RIR 2. As you approach a deload (week 5-6), let your LAST compound set drift to RIR 0-1 to fully express fatigue. Isolations can run closer to failure more often — injury risk is lower.");
-  x.push("7. Write down weight x reps for every set, every session. The log is the only thing that tells you if you're progressing — memory lies, the log doesn't.");
+  if (!a.knowsRir)
+    x.push("6. RIR = 'reps in reserve', how many reps you had left when you stopped. RIR 2 means you stopped 2 reps short of failure; RIR 0 is to failure. Pick a weight that leaves the prescribed reps in reserve.");
+  x.push("7. RIR over time: early sets stay at RIR 2. As you approach a deload (week 5-6), let your LAST compound set drift to RIR 0-1 to fully express fatigue. Isolations can run closer to failure more often — injury risk is lower.");
+  x.push("8. Write down weight x reps for every set, every session. The log is the only thing that tells you if you're progressing — memory lies, the log doesn't.");
   return x;
 }
 
@@ -368,15 +445,21 @@ function buildWarmup(): string[] {
 }
 
 function buildCardio(a: Answers): string[] {
+  const pref = a.cardioPref ?? (a.includeCardio ? "steady" : "none");
   const x: string[] = [];
-  if (!a.includeCardio) {
+  if (pref === "none") {
     x.push("No cardio prescribed — focus recovery on lifting and daily steps.");
     x.push(`Keep walking toward 9-10k steps/day (currently ~${a.dailySteps || "7-8k"}).`);
     return x;
   }
   const freq = a.goal === "fat-loss" ? 3 : 2;
   x.push(`${freq} sessions/week on rest days.`);
-  x.push("25-30 minutes steady state, moderate intensity (conversation-possible but not easy).");
+  if (pref === "hiit") {
+    x.push("Short and hard: 8-10 rounds of 30s work / 90s easy (bike or incline walk). Keep total under 15-20 minutes.");
+    x.push("HIIT on rest days only — it taxes the nervous system, so don't stack it right before a heavy leg day.");
+  } else {
+    x.push("25-30 minutes steady state, moderate intensity (conversation-possible but not easy).");
+  }
   x.push("Incline treadmill walk or stationary bike — avoid running/jogging, it's higher impact on the knees.");
   x.push(`Push daily steps toward 9-10k (currently ~${a.dailySteps || "7-8k"}) — this often moves the needle more than gym cardio and costs nothing in recovery.`);
   if (a.goal === "fat-loss")
@@ -415,16 +498,117 @@ function build12Week(): Program["twelveWeek"] {
   ];
 }
 
+// ---- Validation ------------------------------------------------------------
+function validate(program: Program, a: Answers): string[] {
+  const warnings: string[] = [];
+  for (const w of program.workouts) {
+    if (w.durationMin > a.sessionMin)
+      warnings.push(`${w.focus} runs ~${w.durationMin} min, over your ${a.sessionMin} min limit. Swap or trim a set to fit.`);
+  }
+  const noEquip = new Set<Pattern>();
+  for (const w of program.workouts)
+    for (const e of w.exercises) {
+      const ex = byId(e.id);
+      if (ex && !available(ex, a)) noEquip.add(ex.pattern);
+    }
+  if (noEquip.size)
+    warnings.push(`Some exercises need equipment you don't have listed — swap them out on the program view.`);
+  const maxSets: Partial<Record<MuscleId, number>> = { shoulders: 14, triceps: 14, biceps: 14, calves: 10, core: 10 };
+  for (const v of program.weeklyVolume) {
+    const m = v.muscle.toLowerCase().split(" ")[0] as MuscleId;
+    const cap = maxSets[m];
+    if (cap && v.sets > cap) warnings.push(`${v.muscle}: ${v.sets} hard sets/week is above the ${cap}-set cap for your recovery profile.`);
+  }
+  if (a.needRestSpacing && a.preferredDays.length > 1) {
+    const idx = (d: string) => ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"].indexOf(d);
+    for (let i = 1; i < a.preferredDays.length; i++)
+      if (Math.abs(idx(a.preferredDays[i]) - idx(a.preferredDays[i - 1])) === 1)
+        warnings.push(`${a.preferredDays[i - 1]} → ${a.preferredDays[i]} are consecutive; you asked for rest spacing between sessions.`);
+  }
+  return warnings;
+}
+
+// ---- Swaps (exercise removal / replacement) --------------------------------
+export function applySwaps(program: Program, swaps: ExerciseSwap[]): Program {
+  if (!swaps?.length) return program;
+  const byFrom = new Map(swaps.map((s) => [s.from, s]));
+  const workouts = program.workouts.map((w) => ({
+    ...w,
+    exercises: w.exercises.flatMap((e) => {
+      const swap = byFrom.get(e.id);
+      if (!swap) return [e];
+      if (!swap.to) return [];
+      const repl = byId(swap.to);
+      if (!repl) return [e];
+      return [
+        {
+          ...e,
+          id: repl.id,
+          name: repl.name,
+          notes: e.notes ? `${e.notes} (swapped from ${e.name})` : `Swapped from ${e.name}`,
+        },
+      ];
+    }),
+    durationMin: 0,
+  }));
+  const rebuilt = workouts.map((w) => ({ ...w, durationMin: estimateMinutes(w.exercises) }));
+  return {
+    ...program,
+    workouts: rebuilt,
+    weeklySchedule: program.weeklySchedule.map((s, i) => ({
+      ...s,
+      durationMin: rebuilt[i % rebuilt.length]?.durationMin ?? s.durationMin,
+    })),
+    weeklyVolume: weeklyVolume(rebuilt),
+  };
+}
+
+export function suggestReplacements(fromId: string, reason: SwapReason, a: Answers): { id: string; name: string; note: string }[] {
+  const removed = byId(fromId);
+  if (!removed) return [];
+  const primary = removed.muscles[0];
+  const pool = EXERCISES.filter((e) => e.id !== fromId && e.muscles.includes(primary) && available(e, a) && !banned(e, a));
+  let cands = pool;
+  if (reason === "equipment")
+    cands = cands.filter((e) => !e.equipment.some((q) => removed.equipment.includes(q)));
+  if (reason === "injury" || reason === "pain")
+    cands = cands.filter((e) => e.soloSafe && !e.risk);
+  const safety = (e: Exercise) =>
+    (e.soloSafe ? 2 : 0) + (e.risk ? -2 : 0) + (e.equipment.some((q) => q === "machine" || q === "smith" || q === "leg-press") ? 1 : 0);
+  cands = [...cands].sort((x, y) => safety(y) - safety(x) || score(y, a) - score(x, a));
+  const noteFor = (): string => {
+    if (reason === "equipment") return "Uses different equipment than what you're removing.";
+    if (reason === "injury" || reason === "pain") return "Lower joint-load option — safer alternative.";
+    if (reason === "dislike") return "Alternative you can swap in.";
+    return "Alternative for the same muscle group.";
+  };
+  return cands.slice(0, 6).map((e) => ({ id: e.id, name: e.name, note: noteFor() }));
+}
+
+// ---- Build -----------------------------------------------------------------
 export function buildProgram(a: Answers): Program {
   const split = pickSplit(a);
-  const byIdMap: Record<string, DayTemplate> = { push: PUSH, pull: PULL, legs: LEGS, upper: UPPER, lower: LOWER, "full-a": FULL_BODY_A, "full-b": FULL_BODY_B };
-  const scheduleDays = (a.preferredDays.length === a.daysPerWeek ? a.preferredDays : DEFAULT_DAYS[a.daysPerWeek] ?? DEFAULT_DAYS[5]) as string[];
+  const byIdMap: Record<string, DayTemplate> = {
+    push: PUSH,
+    pull: PULL,
+    legs: LEGS,
+    upper: UPPER,
+    lower: LOWER,
+    accessories: ACCESSORIES,
+    "full-a": FULL_BODY_A,
+    "full-b": FULL_BODY_B,
+  };
+  const preferred = a.preferredDaysFixed === false ? null : a.preferredDays;
+  const scheduleDays = (
+    preferred && preferred.length === a.daysPerWeek
+      ? preferred
+      : DEFAULT_DAYS[a.daysPerWeek] ?? DEFAULT_DAYS[5]
+  ) as string[];
 
-  let workouts = split.templateIds.map((id) => buildDay(byIdMap[id], a));
-  workouts = workouts.map((w) => ({ ...w, exercises: trimToSession(w.exercises, a.sessionMin) }));
+  const workouts = split.templateIds.map((id) => buildDay(byIdMap[id], a));
 
-  // priority muscles: +1 set on first slot that targets them
-  const workoutsAfter = workouts.map((w) => {
+  // priority muscles: +1 set on first slot that targets them, capped at 2/day
+  let workoutsAfter = workouts.map((w) => {
     const boosted = new Set<string>();
     const exercises = w.exercises.map((e) => {
       const ex = byId(e.id);
@@ -439,26 +623,37 @@ export function buildProgram(a: Answers): Program {
     return { ...w, exercises };
   });
 
-  const weeklySchedule = scheduleDays.map((day, i) => ({
-    day,
-    focus: workouts[i % workouts.length].focus,
-    durationMin: workouts[i % workouts.length].durationMin,
-  }));
+  // hard rule: never exceed session cap — trim AFTER the priority boost
+  workoutsAfter = workoutsAfter.map((w) => {
+    const exercises = trimToSession(w.exercises, a.sessionMin);
+    return { ...w, exercises, durationMin: estimateMinutes(exercises) };
+  });
 
-  return {
+  let program: Program = {
     title: `${split.label} — Recomp Program`,
     rationale: buildRationale(a, split),
-    weeklySchedule,
+    weeklySchedule: [],
     workouts: workoutsAfter,
     weeklyVolume: weeklyVolume(workoutsAfter),
-    progression: buildProgression(),
+    progression: buildProgression(a),
     deload: buildDeload(),
     warmup: buildWarmup(),
     cardio: buildCardio(a),
-    core: a.includeCore
-      ? "Direct ab work is built into the Lower day (cable crunch, knee raises, plank). It builds thickness and shape, but visible abs come overwhelmingly from body fat — consistency with your nutrition does more than extra crunches."
-      : "No dedicated core work — skipped by your preference. Optional: 2 sets of plank or hanging knee raises at the end of Lower day.",
+    core: (a.corePref ?? "auto") === "no"
+      ? "No dedicated core work — skipped by your preference. Optional: 2 sets of plank or hanging knee raises at the end of Lower day."
+      : "Direct ab work is built into the Lower day (cable crunch, knee raises, plank). It builds thickness and shape, but visible abs come overwhelmingly from body fat — consistency with your nutrition does more than extra crunches.",
     substitutions: buildSubstitutions(workoutsAfter, a),
     twelveWeek: build12Week(),
+    warnings: [],
   };
+
+  program = applySwaps(program, a.swaps ?? []);
+  program.weeklySchedule = scheduleDays.map((day, i) => ({
+    day,
+    focus: program.workouts[i % program.workouts.length].focus,
+    durationMin: program.workouts[i % program.workouts.length].durationMin,
+  }));
+  program.warnings = validate(program, a);
+
+  return program;
 }
