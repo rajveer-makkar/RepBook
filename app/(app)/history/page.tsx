@@ -92,7 +92,7 @@ export default async function HistoryPage() {
               <Link
                 key={s.id}
                 href={`/history/${s.id}`}
-                className="block rounded-xl border border-zinc-800 bg-zinc-900 p-4 transition hover:border-zinc-500"
+                className="block rounded-xl border border-zinc-800 bg-zinc-900 p-4 transition active:scale-[0.99] hover:border-zinc-500"
               >
                 <div className="flex items-center justify-between">
                   <p className="font-semibold text-zinc-100">{focus}</p>

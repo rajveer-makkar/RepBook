@@ -7,6 +7,7 @@ import { completeSession } from "@/lib/actions/sessions";
 import type { Suggestion } from "@/lib/progression";
 import Button from "@/components/ui/Button";
 import { cn } from "@/lib/cn";
+import { tap } from "@/lib/tap";
 
 export interface LoggerExercise {
   id: string;
@@ -192,7 +193,7 @@ export default function WorkoutLogger({ sessionId, focus, exercises, suggestions
         </div>
         <button
           onClick={askNotify}
-          className="flex items-center gap-1.5 rounded-lg border border-zinc-700 px-3 py-1.5 text-xs font-medium text-zinc-400"
+          className="flex items-center gap-1.5 rounded-lg border border-zinc-700 px-3 py-1.5 text-xs font-medium text-zinc-400 transition active:scale-95"
         >
           <Notification01Icon size={15} />
           Rest alerts
@@ -205,7 +206,7 @@ export default function WorkoutLogger({ sessionId, focus, exercises, suggestions
             const { ex, set } = firstUndone;
             document.getElementById(`ex-${ex}-set-${set}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
           }}
-          className="w-full rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2.5 text-sm font-medium text-zinc-300"
+          className="w-full rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2.5 text-sm font-medium text-zinc-300 transition active:scale-[0.99]"
         >
           Jump to next set → {exercises[firstUndone.ex].name}
         </button>
@@ -274,9 +275,12 @@ export default function WorkoutLogger({ sessionId, focus, exercises, suggestions
                     ))}
                   </select>
                   <button
-                    onClick={() => toggleSet(exIdx, setIdx)}
+                    onClick={() => {
+                      tap();
+                      toggleSet(exIdx, setIdx);
+                    }}
                     className={cn(
-                      "ml-auto rounded-lg px-3 py-1.5 text-xs font-semibold",
+                      "ml-auto rounded-lg px-3 py-1.5 text-xs font-semibold transition active:scale-95",
                       set.done
                         ? "bg-zinc-100 text-zinc-900"
                         : "border border-zinc-700 text-zinc-400 hover:border-zinc-500"
@@ -302,7 +306,7 @@ export default function WorkoutLogger({ sessionId, focus, exercises, suggestions
             </div>
             <button
               onClick={() => setRest({ active: false, endsAt: 0, total: 0 })}
-              className="rounded-lg bg-zinc-100 px-4 py-2 text-sm font-medium text-zinc-900"
+              className="rounded-lg bg-zinc-100 px-4 py-2 text-sm font-medium text-zinc-900 transition active:scale-95"
             >
               Skip
             </button>

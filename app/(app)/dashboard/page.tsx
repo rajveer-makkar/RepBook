@@ -59,7 +59,7 @@ export default async function DashboardPage() {
       {inProgress ? (
         <Link
           href={`/workout/${inProgress.id}`}
-          className="block rounded-xl border border-zinc-700 bg-zinc-800 p-5 shadow-sm"
+          className="block rounded-xl border border-zinc-700 bg-zinc-800 p-5 shadow-sm transition active:scale-[0.99]"
         >
           <p className="text-xs font-medium uppercase tracking-wide text-zinc-400">In progress</p>
           <h2 className="mt-1 text-lg font-semibold text-zinc-100">Resume your workout</h2>
@@ -75,7 +75,7 @@ export default async function DashboardPage() {
           <form action={startTodaySession}>
             <button
               type="submit"
-              className="inline-flex w-full items-center justify-center rounded-lg bg-zinc-100 px-4 py-3 text-sm font-semibold text-zinc-900 transition hover:bg-zinc-200"
+              className="inline-flex w-full items-center justify-center rounded-lg bg-zinc-100 px-4 py-3 text-sm font-semibold text-zinc-900 transition active:scale-[0.98] hover:bg-zinc-200"
             >
               Start today&apos;s workout
             </button>
@@ -93,7 +93,7 @@ export default async function DashboardPage() {
           </p>
           <Link
             href={active ? `/programs/${active.id}` : "/programs/new"}
-            className="inline-flex w-full items-center justify-center rounded-lg bg-zinc-100 px-4 py-3 text-sm font-semibold text-zinc-900 transition hover:bg-zinc-200"
+            className="inline-flex w-full items-center justify-center rounded-lg bg-zinc-100 px-4 py-3 text-sm font-semibold text-zinc-900 transition active:scale-[0.98] hover:bg-zinc-200"
           >
             {active ? "View my program" : "Build my program"}
           </Link>

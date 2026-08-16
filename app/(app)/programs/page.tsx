@@ -15,7 +15,7 @@ export default async function ProgramsPage() {
         <h1 className="text-2xl font-bold text-zinc-100">Programs</h1>
         <Link
           href="/programs/new"
-          className="rounded-lg bg-zinc-100 px-3 py-2 text-sm font-semibold text-zinc-900 transition hover:bg-zinc-200"
+          className="rounded-lg bg-zinc-100 px-3 py-2 text-sm font-semibold text-zinc-900 transition active:scale-95 hover:bg-zinc-200"
         >
           + New
         </Link>
@@ -34,7 +34,7 @@ export default async function ProgramsPage() {
             <Link
               key={p.id}
               href={`/programs/${p.id}`}
-              className="block rounded-xl border border-zinc-800 bg-zinc-900 p-4 transition hover:border-zinc-500"
+              className="block rounded-xl border border-zinc-800 bg-zinc-900 p-4 transition active:scale-[0.99] hover:border-zinc-500"
             >
               <div className="flex items-center justify-between">
                 <p className="font-semibold text-zinc-100">{p.name}</p>

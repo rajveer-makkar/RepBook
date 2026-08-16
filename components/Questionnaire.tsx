@@ -158,7 +158,7 @@ function ChipGroup<T extends string>({
             key={o.value}
             type="button"
             onClick={() => onToggle(o.value)}
-            className={`rounded-full border px-3 py-1.5 text-sm transition ${
+            className={`rounded-full border px-3 py-1.5 text-sm transition active:scale-95 ${
               on
                 ? "border-zinc-100 bg-zinc-100 text-zinc-900"
                 : "border-zinc-700 bg-zinc-900 text-zinc-400 hover:border-zinc-500"
