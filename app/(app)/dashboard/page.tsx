@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { buildProgram } from "@/lib/engine";
+import { startTodaySession } from "@/lib/actions/sessions";
 import { createClient, getUser } from "@/lib/supabase/server";
 
 export default async function DashboardPage() {
@@ -18,6 +19,15 @@ export default async function DashboardPage() {
     .eq("user_id", user!.id)
     .eq("status", "completed");
 
+  const { data: inProgress } = await supabase
+    .from("sessions")
+    .select("id, started_at")
+    .eq("user_id", user!.id)
+    .eq("status", "in_progress")
+    .order("started_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
   const { data: activeProgram } = await supabase
     .from("programs")
     .select("id, name, answers, split_label")
@@ -31,7 +41,9 @@ export default async function DashboardPage() {
   const active = activeProgram
     ? { ...buildProgram(activeProgram.answers as Parameters<typeof buildProgram>[0]), id: activeProgram.id, name: activeProgram.name }
     : null;
-  const todayWorkout = active?.weeklySchedule.find((s) => s.day === today);
+  const todayIdx = active?.weeklySchedule.findIndex((s) => s.day === today) ?? -1;
+  const todayWorkout = todayIdx >= 0 ? active?.weeklySchedule[todayIdx] : null;
+  const nextWorkout = active?.weeklySchedule.find((s) => !todayWorkout || s.day !== today) ?? null;
 
   return (
     <div className="space-y-6">
@@ -44,29 +56,43 @@ export default async function DashboardPage() {
         </p>
       </div>
 
-      {active && todayWorkout ? (
+      {inProgress ? (
+        <Link
+          href={`/workout/${inProgress.id}`}
+          className="block rounded-xl border border-zinc-900 bg-zinc-900 p-5 text-white shadow-sm"
+        >
+          <p className="text-xs font-medium uppercase tracking-wide text-zinc-400">In progress</p>
+          <h2 className="mt-1 text-lg font-semibold">Resume your workout</h2>
+          <p className="mt-1 text-sm text-zinc-400">Started {new Date(inProgress.started_at).toLocaleTimeString()}</p>
+        </Link>
+      ) : active && todayWorkout ? (
         <div className="rounded-xl border border-zinc-200 bg-white p-5 shadow-sm">
           <p className="text-xs font-medium uppercase tracking-wide text-zinc-400">
             {today} · {active.name}
           </p>
           <h2 className="mt-1 text-lg font-semibold text-zinc-900">{todayWorkout.focus}</h2>
           <p className="mb-3 text-sm text-zinc-500">~{todayWorkout.durationMin} min</p>
-          <Link
-            href={`/programs/${active.id}`}
-            className="inline-flex w-full items-center justify-center rounded-lg bg-zinc-900 px-4 py-3 text-sm font-semibold text-white transition hover:bg-zinc-700"
-          >
-            Open today&apos;s workout
-          </Link>
+          <form action={startTodaySession}>
+            <button
+              type="submit"
+              className="inline-flex w-full items-center justify-center rounded-lg bg-zinc-900 px-4 py-3 text-sm font-semibold text-white transition hover:bg-zinc-700"
+            >
+              Start today&apos;s workout
+            </button>
+          </form>
         </div>
       ) : (
         <div className="rounded-xl border border-zinc-200 bg-white p-5 shadow-sm">
-          <h2 className="mb-1 text-base font-semibold text-zinc-900">Your program</h2>
+          <h2 className="mb-1 text-base font-semibold text-zinc-900">
+            {active ? `Rest day — next: ${nextWorkout?.focus ?? "see program"}` : "Your program"}
+          </h2>
           <p className="mb-4 text-sm text-zinc-500">
-            Answer a short questionnaire and RepBook builds a personalized plan with tracker
-            tables, progression rules, and deload guidance.
+            {active
+              ? "Log today's weight, meals, or just recover."
+              : "Answer a short questionnaire and RepBook builds a personalized plan with tracker tables, progression rules, and deload guidance."}
           </p>
           <Link
-            href="/programs/new"
+            href={active ? `/programs/${active.id}` : "/programs/new"}
             className="inline-flex w-full items-center justify-center rounded-lg bg-zinc-900 px-4 py-3 text-sm font-semibold text-white transition hover:bg-zinc-700"
           >
             {active ? "View my program" : "Build my program"}
