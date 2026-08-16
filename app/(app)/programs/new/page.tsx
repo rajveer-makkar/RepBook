@@ -2,19 +2,24 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import Questionnaire from "@/components/Questionnaire";
 import Results from "@/components/Results";
 import { buildProgram } from "@/lib/engine";
+import { saveProgram } from "@/lib/actions/programs";
 import type { Answers, Program } from "@/lib/types";
 
 const STORAGE_KEY = "workout-answers";
 
 export default function NewProgramPage() {
+  const router = useRouter();
   const [answers, setAnswers] = useState<Answers | null>(null);
   const [program, setProgram] = useState<Program | null>(null);
   const [aiRationale, setAiRationale] = useState<string | undefined>();
   const [aiLoading, setAiLoading] = useState(false);
   const [aiError, setAiError] = useState<string | undefined>();
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | undefined>();
 
   const generate = (a: Answers) => {
     try {
@@ -49,6 +54,16 @@ export default function NewProgramPage() {
     }
   };
 
+  const handleSave = async (name: string) => {
+    if (!answers || !program) return;
+    setSaving(true);
+    setSaveError(undefined);
+    const res = await saveProgram(name, answers, aiRationale || program.rationale);
+    setSaving(false);
+    if (res.ok && res.id) router.push(`/programs/${res.id}`);
+    else setSaveError(res.error || "Failed to save.");
+  };
+
   if (!program) {
     return (
       <div className="space-y-4">
@@ -73,6 +88,9 @@ export default function NewProgramPage() {
         aiError={aiError}
         onEnhance={enhance}
         onReset={() => setProgram(null)}
+        onSave={handleSave}
+        saving={saving}
+        saveError={saveError}
       />
     </div>
   );

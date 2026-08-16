@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import type { Program } from "@/lib/types";
+import SaveProgramButton from "@/components/SaveProgramButton";
 
 interface Props {
   program: Program;
@@ -9,7 +10,10 @@ interface Props {
   aiLoading?: boolean;
   aiError?: string;
   onEnhance?: () => void;
-  onReset: () => void;
+  onReset?: () => void;
+  onSave?: (name: string) => void;
+  saving?: boolean;
+  saveError?: string;
 }
 
 function TrackerTable({ day }: { day: Program["workouts"][number] }) {
@@ -47,7 +51,17 @@ function TrackerTable({ day }: { day: Program["workouts"][number] }) {
   );
 }
 
-export default function Results({ program, aiRationale, aiLoading, aiError, onEnhance, onReset }: Props) {
+export default function Results({
+  program,
+  aiRationale,
+  aiLoading,
+  aiError,
+  onEnhance,
+  onReset,
+  onSave,
+  saving,
+  saveError,
+}: Props) {
   const [copied, setCopied] = useState(false);
 
   const rationale = aiRationale || program.rationale;
@@ -113,6 +127,7 @@ export default function Results({ program, aiRationale, aiLoading, aiError, onEn
               {aiLoading ? "Writing…" : "✨ AI explain why this works"}
             </button>
           )}
+          {onSave && <SaveProgramButton onSave={onSave} saving={saving} />}
           <button
             onClick={copyAll}
             className="rounded-lg bg-zinc-900 px-3 py-2 text-sm font-semibold text-white transition hover:bg-zinc-700"
@@ -123,6 +138,7 @@ export default function Results({ program, aiRationale, aiLoading, aiError, onEn
       </div>
 
       {aiError && <p className="text-sm text-red-600">{aiError}</p>}
+      {saveError && <p className="text-sm text-red-600">{saveError}</p>}
       <p className="text-sm leading-relaxed text-zinc-700">{rationale}</p>
 
       <section>
@@ -239,12 +255,14 @@ export default function Results({ program, aiRationale, aiLoading, aiError, onEn
         </div>
       </section>
 
-      <button
-        onClick={onReset}
-        className="rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-600 transition hover:border-zinc-900 hover:text-zinc-900"
-      >
-        ← Edit answers
-      </button>
+      {onReset && (
+        <button
+          onClick={onReset}
+          className="rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-600 transition hover:border-zinc-900 hover:text-zinc-900"
+        >
+          ← Edit answers
+        </button>
+      )}
     </div>
   );
 }
