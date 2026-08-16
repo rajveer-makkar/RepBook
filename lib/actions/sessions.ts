@@ -68,7 +68,7 @@ export async function startTodaySession() {
   redirect(error ? "/dashboard" : `/workout/${session.id}`);
 }
 
-export async function completeSession(sessionId: string, logs: SetLogInput[]) {
+export async function persistCompletion(sessionId: string, logs: SetLogInput[]) {
   const user = await getUser();
   if (!user) return { error: "Not signed in." };
   const supabase = await createClient();
@@ -89,6 +89,12 @@ export async function completeSession(sessionId: string, logs: SetLogInput[]) {
 
   revalidatePath("/dashboard");
   revalidatePath("/history");
+  return { error: null };
+}
+
+export async function completeSession(sessionId: string, logs: SetLogInput[]) {
+  const res = await persistCompletion(sessionId, logs);
+  if (res?.error) return res;
   redirect(`/history/${sessionId}`);
 }
 

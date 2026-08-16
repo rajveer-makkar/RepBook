@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import BottomNav from "@/components/BottomNav";
+import SyncPending from "@/components/SyncPending";
 import { getUser } from "@/lib/supabase/server";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
@@ -12,6 +13,7 @@ return (
         {children}
       </div>
       <BottomNav />
+      <SyncPending />
     </div>
   );
 }

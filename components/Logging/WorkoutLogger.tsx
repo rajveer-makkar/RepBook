@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Notification01Icon, ArrowUp01Icon, ArrowDown01Icon } from "hugeicons-react";
 import { completeSession } from "@/lib/actions/sessions";
+import { enqueuePending } from "@/lib/queue";
 import type { Suggestion } from "@/lib/progression";
 import Button from "@/components/ui/Button";
 import StickyHeader from "@/components/StickyHeader";
@@ -66,6 +67,7 @@ export default function WorkoutLogger({ sessionId, focus, exercises, suggestions
   const [entries, setEntries] = useState<SetEntry[][]>(() => emptyEntries(exercises));
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | undefined>();
+  const [queued, setQueued] = useState(false);
   const [elapsed, setElapsed] = useState(0);
   const [rest, setRest] = useState<RestState>({ active: false, endsAt: 0, total: 0 });
   const [restLeft, setRestLeft] = useState(0);
@@ -157,16 +159,30 @@ export default function WorkoutLogger({ sessionId, focus, exercises, suggestions
           is_completed: true,
         }))
     );
-    const res = await completeSession(sessionId, logs);
-    if (res?.error) {
-      setError(res.error);
-      setSaving(false);
-      return;
-    }
     try {
       localStorage.removeItem(STORAGE_PREFIX + sessionId);
     } catch {
       /* ignore */
+    }
+    if (!navigator.onLine) {
+      enqueuePending({ sessionId, logs });
+      setQueued(true);
+      setSaving(false);
+      return;
+    }
+    try {
+      const res = await completeSession(sessionId, logs);
+      if (res?.error) {
+        enqueuePending({ sessionId, logs });
+        setQueued(true);
+        setSaving(false);
+        return;
+      }
+    } catch {
+      enqueuePending({ sessionId, logs });
+      setQueued(true);
+      setSaving(false);
+      return;
     }
     router.refresh();
   };
@@ -317,9 +333,15 @@ export default function WorkoutLogger({ sessionId, focus, exercises, suggestions
 
       {error && <p className="text-sm text-red-400">{error}</p>}
 
-      <Button onClick={finish} loading={saving} className="sticky bottom-16">
-        Finish workout
-      </Button>
+      {queued ? (
+        <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 text-sm text-amber-300">
+          Saved — will sync when you&apos;re back online.
+        </div>
+      ) : (
+        <Button onClick={finish} loading={saving} className="sticky bottom-16">
+          Finish workout
+        </Button>
+      )}
     </div>
   );
 }
