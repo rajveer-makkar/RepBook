@@ -1,4 +1,5 @@
 import { createClient, getUser } from "@/lib/supabase/server";
+import StickyHeader from "@/components/StickyHeader";
 import { ProfileForm, SettingsForm } from "@/components/SettingsForms";
 import { saveMetric, deleteMetric } from "@/lib/actions/metrics";
 import { signOut } from "@/lib/actions/auth";
@@ -35,7 +36,9 @@ export default async function SettingsPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-zinc-100">Settings</h1>
+      <StickyHeader>
+        <h1 className="text-2xl font-bold text-zinc-100">Settings</h1>
+      </StickyHeader>
 
       <section className="rounded-xl border border-zinc-800 bg-zinc-900 p-5">
         <h2 className="mb-4 text-base font-semibold text-zinc-100">Profile</h2>

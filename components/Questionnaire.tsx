@@ -131,8 +131,10 @@ const labelCls = "mb-1 block text-xs font-medium uppercase tracking-wide text-zi
 
 function Section({ title, subtitle, children }: { title: string; subtitle?: string; children: React.ReactNode }) {
   return (
-    <div className="rounded-xl border border-zinc-800 bg-zinc-900 p-5 shadow-sm">
-      <h2 className="mb-1 text-base font-semibold text-zinc-100">{title}</h2>
+    <div className="scroll-mt-24 rounded-xl border border-zinc-800 bg-zinc-900 p-5 shadow-sm">
+      <h2 className="sticky top-[max(0.75rem,env(safe-area-inset-top))] z-10 -mx-5 mb-1 bg-zinc-900/80 px-5 py-2 text-base font-semibold text-zinc-100 backdrop-blur">
+        {title}
+      </h2>
       {subtitle && <p className="mb-3 text-xs text-zinc-400">{subtitle}</p>}
       {!subtitle && <div className="mb-3" />}
       <div className="space-y-4">{children}</div>

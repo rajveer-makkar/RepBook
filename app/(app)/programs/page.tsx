@@ -1,4 +1,5 @@
 import Link from "next/link";
+import StickyHeader from "@/components/StickyHeader";
 import { createClient } from "@/lib/supabase/server";
 
 export default async function ProgramsPage() {
@@ -11,7 +12,7 @@ export default async function ProgramsPage() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
+      <StickyHeader>
         <h1 className="text-2xl font-bold text-zinc-100">Programs</h1>
         <Link
           href="/programs/new"
@@ -19,7 +20,7 @@ export default async function ProgramsPage() {
         >
           + New
         </Link>
-      </div>
+      </StickyHeader>
 
       {!programs || programs.length === 0 ? (
         <div className="rounded-xl border border-dashed border-zinc-700 bg-zinc-900 p-8 text-center">

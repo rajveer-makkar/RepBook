@@ -1,4 +1,5 @@
 import Link from "next/link";
+import StickyHeader from "@/components/StickyHeader";
 import { buildProgram } from "@/lib/engine";
 import { startTodaySession } from "@/lib/actions/sessions";
 import { createClient, getUser } from "@/lib/supabase/server";
@@ -47,14 +48,16 @@ export default async function DashboardPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-zinc-100">Hey {name}</h1>
-        <p className="mt-1 text-sm text-zinc-400">
-          {completed === 0
-            ? "Let's get your program set up."
-            : `You've completed ${completed} session${completed === 1 ? "" : "s"} so far.`}
-        </p>
-      </div>
+      <StickyHeader>
+        <div>
+          <h1 className="text-2xl font-bold text-zinc-100">Hey {name}</h1>
+          <p className="text-sm text-zinc-400">
+            {completed === 0
+              ? "Let's get your program set up."
+              : `You've completed ${completed} session${completed === 1 ? "" : "s"} so far.`}
+          </p>
+        </div>
+      </StickyHeader>
 
       {inProgress ? (
         <Link

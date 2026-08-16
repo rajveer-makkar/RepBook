@@ -6,6 +6,7 @@ import { Notification01Icon, ArrowUp01Icon, ArrowDown01Icon } from "hugeicons-re
 import { completeSession } from "@/lib/actions/sessions";
 import type { Suggestion } from "@/lib/progression";
 import Button from "@/components/ui/Button";
+import StickyHeader from "@/components/StickyHeader";
 import { cn } from "@/lib/cn";
 import { tap } from "@/lib/tap";
 
@@ -184,7 +185,7 @@ export default function WorkoutLogger({ sessionId, focus, exercises, suggestions
 
   return (
     <div className="space-y-4 pb-4">
-      <div className="flex items-center justify-between">
+      <StickyHeader>
         <div>
           <h1 className="text-xl font-bold text-zinc-100">{focus}</h1>
           <p className="text-sm text-zinc-400">
@@ -198,7 +199,7 @@ export default function WorkoutLogger({ sessionId, focus, exercises, suggestions
           <Notification01Icon size={15} />
           Rest alerts
         </button>
-      </div>
+      </StickyHeader>
 
       {firstUndone && (
         <button

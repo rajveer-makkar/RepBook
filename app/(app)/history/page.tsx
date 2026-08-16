@@ -1,4 +1,5 @@
 import Link from "next/link";
+import StickyHeader from "@/components/StickyHeader";
 import { cn } from "@/lib/cn";
 import { createClient, getUser } from "@/lib/supabase/server";
 
@@ -39,7 +40,9 @@ export default async function HistoryPage() {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-2xl font-bold text-zinc-100">History</h1>
+      <StickyHeader>
+        <h1 className="text-2xl font-bold text-zinc-100">History</h1>
+      </StickyHeader>
 
       <section className="rounded-xl border border-zinc-800 bg-zinc-900 p-4">
         <p className="mb-3 text-sm font-semibold text-zinc-100">

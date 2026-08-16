@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import StickyHeader from "@/components/StickyHeader";
 import { deleteSession } from "@/lib/actions/sessions";
 import { createClient, getUser } from "@/lib/supabase/server";
 
@@ -68,9 +69,11 @@ export default async function SessionDetailPage({ params }: { params: Promise<{ 
 
   return (
     <div className="space-y-4">
-      <Link href="/history" className="text-sm font-medium text-zinc-400 hover:text-zinc-100">
-        ← History
-      </Link>
+      <StickyHeader>
+        <Link href="/history" className="text-sm font-medium text-zinc-400 hover:text-zinc-100">
+          ← History
+        </Link>
+      </StickyHeader>
 
       <div className="flex items-start justify-between">
         <div>

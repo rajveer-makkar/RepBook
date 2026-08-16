@@ -4,6 +4,7 @@ import { useState } from "react";
 import type { Answers, ExerciseSwap, Program, SwapReason } from "@/lib/types";
 import { suggestReplacements } from "@/lib/engine";
 import SaveProgramButton from "@/components/SaveProgramButton";
+import StickyHeader from "@/components/StickyHeader";
 
 interface Props {
   program: Program;
@@ -224,7 +225,7 @@ export default function Results({
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
+      <StickyHeader>
         <h1 className="text-2xl font-bold text-zinc-100">{program.title}</h1>
         <div className="flex gap-2">
           {onEnhance && !aiRationale && (
@@ -244,7 +245,7 @@ export default function Results({
             {copied ? "Copied!" : "Copy full program"}
           </button>
         </div>
-      </div>
+      </StickyHeader>
 
       {aiError && <p className="text-sm text-red-400">{aiError}</p>}
       {saveError && <p className="text-sm text-red-400">{saveError}</p>}

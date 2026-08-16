@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import StickyHeader from "@/components/StickyHeader";
 import ProgramSwapper from "@/components/ProgramSwapper";
 import { buildProgram } from "@/lib/engine";
 import { deleteProgram, setActiveProgram } from "@/lib/actions/programs";
@@ -25,9 +26,11 @@ export default async function ProgramDetailPage({ params }: { params: Promise<{ 
 
   return (
     <div className="space-y-4">
-      <Link href="/programs" className="text-sm font-medium text-zinc-400 hover:text-zinc-100">
-        ← Back to programs
-      </Link>
+      <StickyHeader>
+        <Link href="/programs" className="text-sm font-medium text-zinc-400 hover:text-zinc-100">
+          ← Back to programs
+        </Link>
+      </StickyHeader>
 
       <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-zinc-800 bg-zinc-900 p-4">
         <div>
