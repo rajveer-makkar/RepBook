@@ -1,9 +1,14 @@
 import { NextResponse } from "next/server";
 import { buildProgram } from "@/lib/engine";
 import { enhanceProse, hasApiKey } from "@/lib/llm";
+import { getUser } from "@/lib/supabase/server";
 import type { Answers } from "@/lib/types";
 
 export async function POST(req: Request) {
+  const user = await getUser();
+  if (!user)
+    return NextResponse.json({ ok: false, error: "Sign in to use AI enhancement." }, { status: 401 });
+
   let answers: Answers;
   try {
     const body = await req.json();
