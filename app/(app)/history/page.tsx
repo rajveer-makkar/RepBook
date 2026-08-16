@@ -39,13 +39,13 @@ export default async function HistoryPage() {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-2xl font-bold text-zinc-900">History</h1>
+      <h1 className="text-2xl font-bold text-zinc-100">History</h1>
 
-      <section className="rounded-xl border border-zinc-200 bg-white p-4">
-        <p className="mb-3 text-sm font-semibold text-zinc-900">
+      <section className="rounded-xl border border-zinc-800 bg-zinc-900 p-4">
+        <p className="mb-3 text-sm font-semibold text-zinc-100">
           {now.toLocaleDateString(undefined, { month: "long", year: "numeric" })}
         </p>
-        <div className="grid grid-cols-7 gap-1 text-center text-[11px] text-zinc-400">
+        <div className="grid grid-cols-7 gap-1 text-center text-[11px] text-zinc-500">
           {["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"].map((d) => (
             <span key={d} className="pb-1">{d}</span>
           ))}
@@ -63,9 +63,9 @@ export default async function HistoryPage() {
                 className={cn(
                   "flex aspect-square items-center justify-center rounded-lg text-sm",
                   trained
-                    ? "bg-zinc-900 text-white font-semibold"
-                    : "text-zinc-700",
-                  isToday && !trained && "border border-zinc-300"
+                    ? "bg-zinc-100 text-zinc-900 font-semibold"
+                    : "text-zinc-300",
+                  isToday && !trained && "border border-zinc-500"
                 )}
               >
                 {day}
@@ -76,8 +76,8 @@ export default async function HistoryPage() {
       </section>
 
       {!sessions || sessions.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-zinc-300 bg-white p-8 text-center">
-          <p className="text-sm text-zinc-500">
+        <div className="rounded-xl border border-dashed border-zinc-700 bg-zinc-900 p-8 text-center">
+          <p className="text-sm text-zinc-400">
             No sessions yet. Start today&apos;s workout from the home screen.
           </p>
         </div>
@@ -92,21 +92,21 @@ export default async function HistoryPage() {
               <Link
                 key={s.id}
                 href={`/history/${s.id}`}
-                className="block rounded-xl border border-zinc-200 bg-white p-4 transition hover:border-zinc-400"
+                className="block rounded-xl border border-zinc-800 bg-zinc-900 p-4 transition hover:border-zinc-500"
               >
                 <div className="flex items-center justify-between">
-                  <p className="font-semibold text-zinc-900">{focus}</p>
+                  <p className="font-semibold text-zinc-100">{focus}</p>
                   <span
                     className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${
                       s.status === "completed"
-                        ? "bg-zinc-900 text-white"
-                        : "bg-amber-100 text-amber-700"
+                        ? "bg-zinc-100 text-zinc-900"
+                        : "bg-amber-500/20 text-amber-400"
                     }`}
                   >
                     {s.status}
                   </span>
                 </div>
-                <p className="mt-0.5 text-sm text-zinc-500">
+                <p className="mt-0.5 text-sm text-zinc-400">
                   {new Date(s.started_at).toLocaleDateString(undefined, {
                     weekday: "long",
                     month: "short",

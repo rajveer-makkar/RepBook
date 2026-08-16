@@ -63,7 +63,7 @@ export function ProfileForm({
           ))}
         </Select>
       </div>
-      {state.error && <p className="text-sm text-red-600">{state.error}</p>}
+      {state.error && <p className="text-sm text-red-400">{state.error}</p>}
       <Button type="submit" loading={pending}>
         Save profile
       </Button>
@@ -83,7 +83,7 @@ export function SettingsForm({ unit }: { unit: string }) {
           <option value="lb">lb</option>
         </Select>
       </div>
-      {state.error && <p className="text-sm text-red-600">{state.error}</p>}
+      {state.error && <p className="text-sm text-red-400">{state.error}</p>}
       <Button type="submit" loading={pending}>
         Save units
       </Button>

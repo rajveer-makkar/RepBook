@@ -15,8 +15,8 @@ const TABS = [
 export default function BottomNav() {
   const pathname = usePathname();
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-20 border-t border-zinc-200 bg-white/95 backdrop-blur">
-      <div className="mx-auto flex max-w-4xl">
+    <nav className="fixed inset-x-0 bottom-0 z-20 border-t border-zinc-800 bg-zinc-900/90 backdrop-blur-xl">
+      <div className="mx-auto flex max-w-md">
         {TABS.map(({ href, label, Icon }) => {
           const active = pathname === href || pathname.startsWith(href + "/");
           return (
@@ -24,16 +24,22 @@ export default function BottomNav() {
               key={href}
               href={href}
               className={cn(
-                "flex flex-1 flex-col items-center gap-0.5 py-2.5 text-[11px] font-medium transition",
-                active ? "text-zinc-900" : "text-zinc-400 hover:text-zinc-600"
+                "flex flex-1 flex-col items-center gap-1 py-2 text-[10px] font-semibold tracking-wide transition active:scale-95",
+                active ? "text-zinc-100" : "text-zinc-500"
               )}
             >
-              <Icon size={22} />
+              <Icon
+                size={24}
+                strokeWidth={active ? 2.2 : 1.8}
+                className={active ? "drop-shadow-sm" : ""}
+              />
               {label}
             </Link>
           );
         })}
       </div>
+      {/* iOS home-indicator safe area */}
+      <div className="h-[env(safe-area-inset-bottom)]" />
     </nav>
   );
 }

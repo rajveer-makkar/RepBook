@@ -126,14 +126,14 @@ interface Props {
 }
 
 const inputCls =
-  "w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none focus:border-zinc-500 focus:ring-1 focus:ring-zinc-400";
+  "w-full rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-zinc-100 outline-none focus:border-zinc-500 focus:ring-1 focus:ring-zinc-600";
 const labelCls = "mb-1 block text-xs font-medium uppercase tracking-wide text-zinc-500";
 
 function Section({ title, subtitle, children }: { title: string; subtitle?: string; children: React.ReactNode }) {
   return (
-    <div className="rounded-xl border border-zinc-200 bg-white p-5 shadow-sm">
-      <h2 className="mb-1 text-base font-semibold text-zinc-900">{title}</h2>
-      {subtitle && <p className="mb-3 text-xs text-zinc-500">{subtitle}</p>}
+    <div className="rounded-xl border border-zinc-800 bg-zinc-900 p-5 shadow-sm">
+      <h2 className="mb-1 text-base font-semibold text-zinc-100">{title}</h2>
+      {subtitle && <p className="mb-3 text-xs text-zinc-400">{subtitle}</p>}
       {!subtitle && <div className="mb-3" />}
       <div className="space-y-4">{children}</div>
     </div>
@@ -160,8 +160,8 @@ function ChipGroup<T extends string>({
             onClick={() => onToggle(o.value)}
             className={`rounded-full border px-3 py-1.5 text-sm transition ${
               on
-                ? "border-zinc-900 bg-zinc-900 text-white"
-                : "border-zinc-300 bg-white text-zinc-700 hover:border-zinc-500"
+                ? "border-zinc-100 bg-zinc-100 text-zinc-900"
+                : "border-zinc-700 bg-zinc-900 text-zinc-400 hover:border-zinc-500"
             }`}
           >
             {o.label}
@@ -186,11 +186,11 @@ function RadioGroup<T extends string>({
   return (
     <div className="space-y-2">
       {options.map((o) => (
-        <label key={o.value} className="flex cursor-pointer items-start gap-2 text-sm text-zinc-700">
+        <label key={o.value} className="flex cursor-pointer items-start gap-2 text-sm text-zinc-300">
           <input type="radio" name={name} checked={value === o.value} onChange={() => onChange(o.value)} className="mt-0.5 accent-zinc-900" />
           <span>
             {o.label}
-            {o.sub && <span className="block text-xs text-zinc-500">{o.sub}</span>}
+            {o.sub && <span className="block text-xs text-zinc-400">{o.sub}</span>}
           </span>
         </label>
       ))}
@@ -306,11 +306,11 @@ export default function Questionnaire({ onGenerate, initial }: Props) {
           </div>
         </div>
         <div>
-          <label className="flex items-center gap-2 text-sm text-zinc-700">
+          <label className="flex items-center gap-2 text-sm text-zinc-300">
             <input type="checkbox" checked={a.preferredDaysFixed !== false} onChange={(e) => set("preferredDaysFixed", e.target.checked)} className="accent-zinc-900" />
             I have fixed days I can train
           </label>
-          <p className="mt-1 text-xs text-zinc-500">Turn this off to let the program pick the best days for you.</p>
+          <p className="mt-1 text-xs text-zinc-400">Turn this off to let the program pick the best days for you.</p>
         </div>
         {a.preferredDaysFixed !== false && (
           <div>
@@ -332,7 +332,7 @@ export default function Questionnaire({ onGenerate, initial }: Props) {
             />
           </div>
         )}
-        <label className="flex items-center gap-2 text-sm text-zinc-700">
+        <label className="flex items-center gap-2 text-sm text-zinc-300">
           <input type="checkbox" checked={a.needRestSpacing} onChange={(e) => set("needRestSpacing", e.target.checked)} className="accent-zinc-900" />
           I want / need rest days between certain sessions
         </label>
@@ -370,11 +370,11 @@ export default function Questionnaire({ onGenerate, initial }: Props) {
             <input type="number" step="0.5" className={inputCls} value={a.experienceYears} onChange={(e) => set("experienceYears", e.target.value)} placeholder="1" />
           </div>
         </div>
-        <label className="flex items-center gap-2 text-sm text-zinc-700">
+        <label className="flex items-center gap-2 text-sm text-zinc-300">
           <input type="checkbox" checked={a.structuredPrograms} onChange={(e) => set("structuredPrograms", e.target.checked)} className="accent-zinc-900" />
           I&apos;ve followed structured programs before
         </label>
-        <label className="flex items-center gap-2 text-sm text-zinc-700">
+        <label className="flex items-center gap-2 text-sm text-zinc-300">
           <input type="checkbox" checked={a.knowsRir ?? false} onChange={(e) => set("knowsRir", e.target.checked)} className="accent-zinc-900" />
           I know what RIR / reps-in-reserve means
         </label>
@@ -494,8 +494,8 @@ export default function Questionnaire({ onGenerate, initial }: Props) {
             {a.injuries.map((inj) => {
               const detail = a.injuryDetails?.[inj];
               return (
-                <div key={inj} className="rounded-lg border border-zinc-200 p-3">
-                  <p className="mb-2 text-sm font-medium capitalize text-zinc-800">{inj.replace("-", " ")}</p>
+                <div key={inj} className="rounded-lg border border-zinc-800 p-3">
+                  <p className="mb-2 text-sm font-medium capitalize text-zinc-200">{inj.replace("-", " ")}</p>
                   <div className="mb-2">
                     <label className={labelCls}>How limiting is it right now?</label>
                     <RadioGroup
@@ -625,7 +625,7 @@ export default function Questionnaire({ onGenerate, initial }: Props) {
       </Section>
 
       {!need && (
-        <p className="text-sm text-amber-700">
+        <p className="text-sm text-amber-400">
           Fill in age, height, weight, days/week and experience to generate your program.
         </p>
       )}
@@ -634,7 +634,7 @@ export default function Questionnaire({ onGenerate, initial }: Props) {
         type="button"
         disabled={!need}
         onClick={() => onGenerate(a)}
-        className="w-full rounded-lg bg-zinc-900 px-4 py-3 text-sm font-semibold text-white transition hover:bg-zinc-700 disabled:cursor-not-allowed disabled:bg-zinc-300"
+        className="w-full rounded-lg bg-zinc-100 px-4 py-3 text-sm font-semibold text-zinc-900 transition hover:bg-zinc-200 disabled:cursor-not-allowed disabled:bg-zinc-700"
       >
         Generate my program
       </button>

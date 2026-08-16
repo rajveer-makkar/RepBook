@@ -12,10 +12,10 @@ export default function LoginPage() {
   const [state, formAction, pending] = useActionState(login, initialState);
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-zinc-50 px-4">
+    <div className="flex min-h-screen flex-col items-center justify-center bg-zinc-900 px-4">
       <div className="w-full max-w-sm">
-        <h1 className="mb-1 text-2xl font-bold text-zinc-900">RepBook</h1>
-        <p className="mb-6 text-sm text-zinc-500">Sign in to your training log.</p>
+        <h1 className="mb-1 text-2xl font-bold text-zinc-100">RepBook</h1>
+        <p className="mb-6 text-sm text-zinc-400">Sign in to your training log.</p>
 
         <form action={formAction} className="space-y-4">
           <div>
@@ -26,15 +26,15 @@ export default function LoginPage() {
             <Label>Password</Label>
             <Input name="password" type="password" required autoComplete="current-password" placeholder="••••••••" />
           </div>
-          {state.error && <p className="text-sm text-red-600">{state.error}</p>}
+          {state.error && <p className="text-sm text-red-400">{state.error}</p>}
           <Button type="submit" loading={pending}>
             Sign in
           </Button>
         </form>
 
-        <p className="mt-6 text-center text-sm text-zinc-500">
+        <p className="mt-6 text-center text-sm text-zinc-400">
           No account?{" "}
-          <Link href="/signup" className="font-medium text-zinc-900 hover:underline">
+          <Link href="/signup" className="font-medium text-zinc-100 hover:underline">
             Create one
           </Link>
         </p>

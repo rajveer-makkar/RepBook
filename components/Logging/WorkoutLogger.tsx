@@ -179,20 +179,20 @@ export default function WorkoutLogger({ sessionId, focus, exercises, suggestions
   })();
 
   const inputCls =
-    "w-16 rounded-lg border border-zinc-300 bg-white px-2 py-1.5 text-center text-sm text-zinc-900 outline-none focus:border-zinc-500";
+    "w-16 rounded-lg border border-zinc-700 bg-zinc-900 px-2 py-1.5 text-center text-sm text-zinc-100 outline-none focus:border-zinc-500";
 
   return (
     <div className="space-y-4 pb-4">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-bold text-zinc-900">{focus}</h1>
-          <p className="text-sm text-zinc-500">
+          <h1 className="text-xl font-bold text-zinc-100">{focus}</h1>
+          <p className="text-sm text-zinc-400">
             {formatTime(elapsed)} · {totalLogged}/{totalSets} sets logged
           </p>
         </div>
         <button
           onClick={askNotify}
-          className="flex items-center gap-1.5 rounded-lg border border-zinc-300 px-3 py-1.5 text-xs font-medium text-zinc-600"
+          className="flex items-center gap-1.5 rounded-lg border border-zinc-700 px-3 py-1.5 text-xs font-medium text-zinc-400"
         >
           <Notification01Icon size={15} />
           Rest alerts
@@ -205,7 +205,7 @@ export default function WorkoutLogger({ sessionId, focus, exercises, suggestions
             const { ex, set } = firstUndone;
             document.getElementById(`ex-${ex}-set-${set}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
           }}
-          className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2.5 text-sm font-medium text-zinc-700"
+          className="w-full rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2.5 text-sm font-medium text-zinc-300"
         >
           Jump to next set → {exercises[firstUndone.ex].name}
         </button>
@@ -215,10 +215,10 @@ export default function WorkoutLogger({ sessionId, focus, exercises, suggestions
         {exercises.map((ex, exIdx) => {
           const s = suggestions[ex.id];
           return (
-          <div key={ex.id} id={`ex-${exIdx}`} className="rounded-xl border border-zinc-200 bg-white p-4">
+          <div key={ex.id} id={`ex-${exIdx}`} className="rounded-xl border border-zinc-800 bg-zinc-900 p-4">
             <div className="mb-3 flex items-baseline justify-between">
-              <p className="font-semibold text-zinc-900">{ex.name}</p>
-              <p className="text-xs text-zinc-500">
+              <p className="font-semibold text-zinc-100">{ex.name}</p>
+              <p className="text-xs text-zinc-400">
                 {ex.sets}×{ex.reps} · RIR {ex.rir} · rest {Math.round(ex.restSec / 60)}m
               </p>
             </div>
@@ -226,9 +226,9 @@ export default function WorkoutLogger({ sessionId, focus, exercises, suggestions
               <div
                 className={cn(
                   "mb-3 flex items-start gap-1.5 rounded-lg px-3 py-2 text-xs",
-                  s.action === "up" && "bg-emerald-50 text-emerald-700",
-                  s.action === "hold" && "bg-zinc-50 text-zinc-600",
-                  s.action === "down" && "bg-amber-50 text-amber-700"
+                  s.action === "up" && "bg-emerald-500/10 text-emerald-400",
+                  s.action === "hold" && "bg-zinc-800 text-zinc-400",
+                  s.action === "down" && "bg-amber-500/10 text-amber-400"
                 )}
               >
                 {s.action === "up" && <ArrowUp01Icon size={14} className="mt-0.5 shrink-0" />}
@@ -243,10 +243,10 @@ export default function WorkoutLogger({ sessionId, focus, exercises, suggestions
                   id={`ex-${exIdx}-set-${setIdx}`}
                   className={cn(
                     "flex items-center gap-2 rounded-lg border px-3 py-2",
-                    set.done ? "border-zinc-900 bg-zinc-50" : "border-zinc-200 bg-white"
+                    set.done ? "border-zinc-100 bg-zinc-800" : "border-zinc-700 bg-zinc-900"
                   )}
                 >
-                  <span className="w-5 text-center text-xs font-medium text-zinc-400">{set.set_number}</span>
+                  <span className="w-5 text-center text-xs font-medium text-zinc-500">{set.set_number}</span>
                   <input
                     type="number"
                     inputMode="decimal"
@@ -266,7 +266,7 @@ export default function WorkoutLogger({ sessionId, focus, exercises, suggestions
                   <select
                     value={set.rir}
                     onChange={(e) => setCell(exIdx, setIdx, { rir: e.target.value })}
-                    className="w-14 rounded-lg border border-zinc-300 bg-white px-1 py-1.5 text-center text-sm text-zinc-700 outline-none"
+                    className="w-14 rounded-lg border border-zinc-700 bg-zinc-900 px-1 py-1.5 text-center text-sm text-zinc-300 outline-none"
                   >
                     <option value="">RIR</option>
                     {[0, 1, 2, 3, 4].map((r) => (
@@ -278,8 +278,8 @@ export default function WorkoutLogger({ sessionId, focus, exercises, suggestions
                     className={cn(
                       "ml-auto rounded-lg px-3 py-1.5 text-xs font-semibold",
                       set.done
-                        ? "bg-zinc-900 text-white"
-                        : "border border-zinc-300 text-zinc-600 hover:border-zinc-900"
+                        ? "bg-zinc-100 text-zinc-900"
+                        : "border border-zinc-700 text-zinc-400 hover:border-zinc-500"
                     )}
                   >
                     {set.done ? "✓ Done" : "Log"}
@@ -287,7 +287,7 @@ export default function WorkoutLogger({ sessionId, focus, exercises, suggestions
                 </div>
               ))}
             </div>
-            {ex.notes && <p className="mt-2 text-xs text-zinc-400">{ex.notes}</p>}
+            {ex.notes && <p className="mt-2 text-xs text-zinc-500">{ex.notes}</p>}
           </div>
           );
         })}
@@ -295,14 +295,14 @@ export default function WorkoutLogger({ sessionId, focus, exercises, suggestions
 
       {rest.active && (
         <div className="fixed inset-x-0 bottom-20 z-20 mx-auto max-w-4xl px-4">
-          <div className="flex items-center justify-between rounded-xl bg-zinc-900 px-5 py-4 text-white shadow-lg">
+          <div className="flex items-center justify-between rounded-xl bg-zinc-100 px-5 py-4 text-zinc-900 shadow-lg">
             <div>
               <p className="text-xs text-zinc-400">Rest · {Math.round(rest.total / 60)}m</p>
               <p className="text-2xl font-bold tabular-nums">{formatTime(restLeft)}</p>
             </div>
             <button
               onClick={() => setRest({ active: false, endsAt: 0, total: 0 })}
-              className="rounded-lg bg-white/10 px-4 py-2 text-sm font-medium"
+              className="rounded-lg bg-zinc-800 px-4 py-2 text-sm font-medium text-zinc-100"
             >
               Skip
             </button>
@@ -310,7 +310,7 @@ export default function WorkoutLogger({ sessionId, focus, exercises, suggestions
         </div>
       )}
 
-      {error && <p className="text-sm text-red-600">{error}</p>}
+      {error && <p className="text-sm text-red-400">{error}</p>}
 
       <Button onClick={finish} loading={saving} className="sticky bottom-16">
         Finish workout

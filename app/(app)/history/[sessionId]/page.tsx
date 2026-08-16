@@ -68,16 +68,16 @@ export default async function SessionDetailPage({ params }: { params: Promise<{ 
 
   return (
     <div className="space-y-4">
-      <Link href="/history" className="text-sm font-medium text-zinc-500 hover:text-zinc-900">
+      <Link href="/history" className="text-sm font-medium text-zinc-400 hover:text-zinc-100">
         ← History
       </Link>
 
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-xl font-bold text-zinc-900">
+          <h1 className="text-xl font-bold text-zinc-100">
             {(session.workout_templates as { focus?: string } | null)?.focus ?? "Workout"}
           </h1>
-          <p className="text-sm text-zinc-500">
+          <p className="text-sm text-zinc-400">
             {new Date(session.started_at).toLocaleDateString(undefined, {
               weekday: "long",
               month: "long",
@@ -88,7 +88,7 @@ export default async function SessionDetailPage({ params }: { params: Promise<{ 
         <form action={deleteSession.bind(null, sessionId)}>
           <button
             type="submit"
-            className="rounded-lg border border-red-200 px-3 py-2 text-sm font-semibold text-red-600 transition hover:bg-red-50"
+            className="rounded-lg border border-red-500/30 px-3 py-2 text-sm font-semibold text-red-400 transition hover:bg-red-500/10"
           >
             Delete
           </button>
@@ -96,27 +96,27 @@ export default async function SessionDetailPage({ params }: { params: Promise<{ 
       </div>
 
       {session.status === "completed" && (
-        <p className="text-sm text-zinc-500">
+        <p className="text-sm text-zinc-400">
           {Object.keys(byExercise).length} exercises · {logs?.length ?? 0} sets · {Math.round(totalVolume)}kg total volume
         </p>
       )}
 
       {session.status !== "completed" && (
-        <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
+        <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 text-sm text-amber-300">
           This session was started but never finished.
         </div>
       )}
 
       <div className="space-y-3">
         {Object.entries(byExercise).map(([name, sets]) => (
-          <div key={name} className="rounded-xl border border-zinc-200 bg-white p-4">
-            <p className="mb-2 font-semibold text-zinc-900">{name}</p>
+          <div key={name} className="rounded-xl border border-zinc-800 bg-zinc-900 p-4">
+            <p className="mb-2 font-semibold text-zinc-100">{name}</p>
             {(progressionByExercise[name] ?? []).length > 0 && (
               <div className="mb-3 flex flex-wrap gap-1.5">
                 {progressionByExercise[name].map((p) => (
                   <span
                     key={p.date + p.weight}
-                    className="rounded-md bg-zinc-100 px-2 py-1 text-[11px] font-medium text-zinc-600"
+                    className="rounded-md bg-zinc-800 px-2 py-1 text-[11px] font-medium text-zinc-400"
                   >
                     {p.date} · {p.weight}kg
                   </span>
@@ -126,11 +126,11 @@ export default async function SessionDetailPage({ params }: { params: Promise<{ 
             <div className="space-y-1">
               {sets.map((log) => (
                 <div key={log.id} className="flex items-center gap-3 text-sm">
-                  <span className="w-6 text-xs text-zinc-400">{log.set_number}</span>
-                  <span className="font-medium text-zinc-800">{log.weight_kg ?? "—"}kg</span>
-                  <span className="text-zinc-500">× {log.reps ?? "—"}</span>
+                  <span className="w-6 text-xs text-zinc-500">{log.set_number}</span>
+                  <span className="font-medium text-zinc-200">{log.weight_kg ?? "—"}kg</span>
+                  <span className="text-zinc-400">× {log.reps ?? "—"}</span>
                   {log.rir_felt !== null && (
-                    <span className="ml-auto text-xs text-zinc-400">RIR {log.rir_felt}</span>
+                    <span className="ml-auto text-xs text-zinc-500">RIR {log.rir_felt}</span>
                   )}
                 </div>
               ))}

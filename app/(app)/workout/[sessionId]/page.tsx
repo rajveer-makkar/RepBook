@@ -71,13 +71,13 @@ export default async function WorkoutPage({ params }: { params: Promise<{ sessio
 
   return (
     <div className="space-y-4">
-      <Link href="/dashboard" className="text-sm font-medium text-zinc-500 hover:text-zinc-900">
+      <Link href="/dashboard" className="text-sm font-medium text-zinc-400 hover:text-zinc-100">
         ← Home
       </Link>
       {session.status === "completed" ? (
-        <div className="rounded-xl border border-zinc-200 bg-white p-6 text-center">
-          <p className="text-sm text-zinc-500">This workout is already completed.</p>
-          <Link href={`/history/${sessionId}`} className="mt-2 inline-block text-sm font-medium text-zinc-900 underline">
+        <div className="rounded-xl border border-zinc-800 bg-zinc-900 p-6 text-center">
+          <p className="text-sm text-zinc-400">This workout is already completed.</p>
+          <Link href={`/history/${sessionId}`} className="mt-2 inline-block text-sm font-medium text-zinc-100 underline">
             View session
           </Link>
         </div>

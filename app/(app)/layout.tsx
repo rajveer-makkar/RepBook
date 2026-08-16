@@ -6,9 +6,11 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   const user = await getUser();
   if (!user) redirect("/login");
 
-  return (
-    <div className="min-h-screen bg-zinc-50 pb-24">
-      <div className="mx-auto max-w-4xl px-4 pt-6">{children}</div>
+return (
+    <div className="min-h-dvh bg-zinc-900">
+      <div className="mx-auto w-full max-w-md px-4 pt-[max(1.5rem,env(safe-area-inset-top))] pb-28">
+        {children}
+      </div>
       <BottomNav />
     </div>
   );

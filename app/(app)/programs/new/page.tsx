@@ -74,10 +74,10 @@ export default function NewProgramPage() {
   if (!program) {
     return (
       <div className="space-y-4">
-        <Link href="/programs" className="text-sm font-medium text-zinc-500 hover:text-zinc-900">
+        <Link href="/programs" className="text-sm font-medium text-zinc-400 hover:text-zinc-100">
           ← Back to programs
         </Link>
-        <h1 className="text-2xl font-bold text-zinc-900">Build your program</h1>
+        <h1 className="text-2xl font-bold text-zinc-100">Build your program</h1>
         <Questionnaire onGenerate={generate} />
       </div>
     );
@@ -85,7 +85,7 @@ export default function NewProgramPage() {
 
   return (
     <div className="space-y-4">
-      <Link href="/programs" className="text-sm font-medium text-zinc-500 hover:text-zinc-900">
+      <Link href="/programs" className="text-sm font-medium text-zinc-400 hover:text-zinc-100">
         ← Back to programs
       </Link>
       <Results
