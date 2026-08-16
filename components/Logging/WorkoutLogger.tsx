@@ -295,14 +295,14 @@ export default function WorkoutLogger({ sessionId, focus, exercises, suggestions
 
       {rest.active && (
         <div className="fixed inset-x-0 bottom-20 z-20 mx-auto max-w-4xl px-4">
-          <div className="flex items-center justify-between rounded-xl bg-zinc-100 px-5 py-4 text-zinc-900 shadow-lg">
+          <div className="flex items-center justify-between rounded-xl bg-zinc-800 px-5 py-4 shadow-lg">
             <div>
               <p className="text-xs text-zinc-400">Rest · {Math.round(rest.total / 60)}m</p>
-              <p className="text-2xl font-bold tabular-nums">{formatTime(restLeft)}</p>
+              <p className="text-2xl font-bold tabular-nums text-zinc-100">{formatTime(restLeft)}</p>
             </div>
             <button
               onClick={() => setRest({ active: false, endsAt: 0, total: 0 })}
-              className="rounded-lg bg-zinc-800 px-4 py-2 text-sm font-medium text-zinc-100"
+              className="rounded-lg bg-zinc-100 px-4 py-2 text-sm font-medium text-zinc-900"
             >
               Skip
             </button>

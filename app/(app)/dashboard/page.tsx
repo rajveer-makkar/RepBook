@@ -59,11 +59,11 @@ export default async function DashboardPage() {
       {inProgress ? (
         <Link
           href={`/workout/${inProgress.id}`}
-          className="block rounded-xl border border-zinc-700 bg-zinc-100 p-5 text-zinc-900 shadow-sm"
+          className="block rounded-xl border border-zinc-700 bg-zinc-800 p-5 shadow-sm"
         >
-          <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">In progress</p>
-          <h2 className="mt-1 text-lg font-semibold">Resume your workout</h2>
-          <p className="mt-1 text-sm text-zinc-500">Started {new Date(inProgress.started_at).toLocaleTimeString()}</p>
+          <p className="text-xs font-medium uppercase tracking-wide text-zinc-400">In progress</p>
+          <h2 className="mt-1 text-lg font-semibold text-zinc-100">Resume your workout</h2>
+          <p className="mt-1 text-sm text-zinc-400">Started {new Date(inProgress.started_at).toLocaleTimeString()}</p>
         </Link>
       ) : active && todayWorkout ? (
         <div className="rounded-xl border border-zinc-800 bg-zinc-900 p-5 shadow-sm">
@@ -112,7 +112,7 @@ export default async function DashboardPage() {
                 }`}
               >
                 <span className="font-medium">{s.day}</span>
-                <span className={s.day === today ? "text-zinc-300" : "text-zinc-500"}>{s.focus}</span>
+                <span className={s.day === today ? "text-zinc-600" : "text-zinc-500"}>{s.focus}</span>
               </div>
             ))}
           </div>
