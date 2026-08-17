@@ -94,6 +94,31 @@ export async function saveProgram(
   return { ok: true, id: data.id };
 }
 
+export async function getActiveProgramAnswers(): Promise<Answers | null> {
+  const user = await getUser();
+  if (!user) return null;
+  const supabase = await createClient();
+
+  const { data } = await supabase
+    .from("programs")
+    .select("answers")
+    .eq("user_id", user.id)
+    .eq("is_active", true)
+    .single();
+
+  if (!data) {
+    const { data: latest } = await supabase
+      .from("programs")
+      .select("answers")
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    return latest?.answers as Answers | null;
+  }
+  return data.answers as Answers;
+}
+
 export async function setActiveProgram(id: string) {
   const user = await getUser();
   if (!user) return;

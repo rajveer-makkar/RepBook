@@ -2,13 +2,13 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home01Icon, Dumbbell01Icon, Clock03Icon, Settings01Icon } from "hugeicons-react";
+import { Home01Icon, Dumbbell01Icon, Calculator01Icon, Settings01Icon } from "hugeicons-react";
 import { cn } from "@/lib/cn";
 
 const TABS = [
   { href: "/dashboard", label: "Home", Icon: Home01Icon },
   { href: "/programs", label: "Programs", Icon: Dumbbell01Icon },
-  { href: "/history", label: "History", Icon: Clock03Icon },
+  { href: "/nutrition", label: "Nutrition", Icon: Calculator01Icon },
   { href: "/settings", label: "Settings", Icon: Settings01Icon },
 ];
 

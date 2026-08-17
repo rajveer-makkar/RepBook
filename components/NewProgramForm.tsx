@@ -7,6 +7,7 @@ import Questionnaire from "@/components/Questionnaire";
 import Results from "@/components/Results";
 import { buildProgram } from "@/lib/engine";
 import { toSummary } from "@/lib/adaptive";
+import { cacheNutrition } from "@/lib/cache";
 import { saveProgram } from "@/lib/actions/programs";
 import type { Answers, ExerciseSwap, Program } from "@/lib/types";
 import type { FeedbackProp } from "@/lib/adaptive";
@@ -36,6 +37,7 @@ export default function NewProgramForm({ feedback }: Props) {
     }
     setAnswers(a);
     setProgram(buildProgram(a, summary));
+    cacheNutrition(a);
     setAiRationale(undefined);
     setAiError(undefined);
     window.scrollTo({ top: 0, behavior: "smooth" });

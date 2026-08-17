@@ -21,6 +21,13 @@ export default async function DashboardPage() {
     .eq("user_id", user!.id)
     .eq("status", "completed");
 
+  const { data: recentSessions } = await supabase
+    .from("sessions")
+    .select("id, started_at, status, workout_templates(focus), set_logs(weight_kg, reps)")
+    .eq("user_id", user!.id)
+    .order("started_at", { ascending: false })
+    .limit(5);
+
   const { data: inProgress } = await supabase
     .from("sessions")
     .select("id, started_at")
@@ -146,6 +153,53 @@ export default async function DashboardPage() {
           <p className="mt-1 truncate text-lg font-bold text-zinc-100">{active?.name ?? "—"}</p>
         </div>
       </div>
+
+      <div>
+        <div className="mb-2 flex items-center justify-between">
+          <h2 className="text-lg font-semibold text-zinc-100">Workout History</h2>
+          <Link href="/history" className="text-sm font-medium text-zinc-400 hover:text-zinc-100">
+            See all
+          </Link>
+        </div>
+        {!recentSessions || recentSessions.length === 0 ? (
+          <div className="rounded-xl border border-dashed border-zinc-700 bg-zinc-900 p-6 text-center">
+            <p className="text-sm text-zinc-400">No workouts yet — finish your first session and it shows up here.</p>
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {recentSessions.map((s) => {
+              const logs = s.set_logs ?? [];
+              const sets = logs.length;
+              const volume = logs.reduce((sum, l) => sum + (l.weight_kg ?? 0) * (l.reps ?? 0), 0);
+              const focus = (s.workout_templates as { focus?: string } | null)?.focus ?? "Workout";
+              return (
+                <Link
+                  key={s.id}
+                  href={`/history/${s.id}`}
+                  className="block rounded-xl border border-zinc-800 bg-zinc-900 p-4 transition active:scale-[0.99] hover:border-zinc-500"
+                >
+                  <div className="flex items-center justify-between">
+                    <p className="font-semibold text-zinc-100">{focus}</p>
+                    {s.status === "in_progress" && (
+                      <span className="rounded-full bg-amber-500/20 px-2 py-0.5 text-[11px] font-medium text-amber-400">
+                        in progress
+                      </span>
+                    )}
+                  </div>
+                  <p className="mt-0.5 text-sm text-zinc-400">
+                    {new Date(s.started_at).toLocaleDateString(undefined, {
+                      weekday: "long",
+                      month: "short",
+                      day: "numeric",
+                    })}
+                    {s.status === "completed" && ` · ${sets} sets · ${Math.round(volume)}kg volume`}
+                  </p>
+                </Link>
+              );
+            })}
+            </div>
+          )}
+        </div>
     </div>
   );
 }

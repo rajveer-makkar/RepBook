@@ -118,4 +118,5 @@ export async function deleteSession(sessionId: string) {
 
   revalidatePath("/dashboard");
   revalidatePath("/history");
+  redirect("/history");
 }

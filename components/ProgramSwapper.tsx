@@ -4,6 +4,7 @@ import { useState } from "react";
 import Results from "@/components/Results";
 import { buildProgram } from "@/lib/engine";
 import { toSummary } from "@/lib/adaptive";
+import { cacheNutrition } from "@/lib/cache";
 import { updateProgramSwaps } from "@/lib/actions/programs";
 import type { Answers, ExerciseSwap, Program } from "@/lib/types";
 import type { FeedbackProp } from "@/lib/adaptive";
@@ -25,6 +26,7 @@ export default function ProgramSwapper({ programId, program, answers, feedback }
     setSaving(true);
     const next: Answers = { ...answers, swaps: [...(answers.swaps ?? []), swap] };
     setProg(buildProgram(next, summary));
+    cacheNutrition(next);
     await updateProgramSwaps(programId, next.swaps ?? []);
     setSaving(false);
   };
