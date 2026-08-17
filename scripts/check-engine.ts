@@ -1,4 +1,7 @@
 import { buildProgram, resolveExperienceLevel, resolveRecoveryLevel, suggestReplacements } from "../lib/engine";
+import { byId } from "../lib/exercises";
+import { summarizeFeedback } from "../lib/adaptive";
+import { computeNutrition, preferredTarget } from "../lib/nutrition";
 import type { Answers } from "../lib/types";
 
 function assert(cond: boolean, msg: string) {
@@ -66,6 +69,39 @@ assert(!removeProg.workouts.flatMap((w) => w.exercises).some((e) => e.id === "in
 const reps = suggestReplacements("incline-bb", "injury", a);
 assert(reps.length > 0, "replacement suggestions returned");
 assert(reps.every((r) => r.id !== "incline-bb"), "suggestions exclude the removed exercise");
+
+// ---- adaptive: feedback summary -------------------------------------------
+const fb = summarizeFeedback([
+  { difficulty: "hard", performance: "same", pain: [] },
+  { difficulty: "brutal", performance: "worse", pain: [] },
+  { difficulty: "brutal", performance: "worse", pain: ["knees"] },
+]);
+assert(fb.avgDifficulty >= 2, "feedback avg difficulty picks up hard sessions");
+assert(fb.brutalStreak === 2, "brutal streak counts trailing brutal sessions");
+assert(fb.pain.has("knees"), "feedback pain areas collected");
+
+const adapted = buildProgram(a, fb);
+const baseline = buildProgram(a);
+const adaptedSets = (p: ReturnType<typeof buildProgram>) =>
+  p.workouts.flatMap((w) => w.exercises).reduce((s, e) => s + e.sets, 0);
+assert(adaptedSets(adapted) <= adaptedSets(baseline), "hard feedback does not add volume");
+assert(adapted.deload.when.startsWith("Every 4"), "brutal streak pulls deload earlier");
+assert(
+  !adapted.workouts.flatMap((w) => w.exercises).some((e) => {
+    const ex = byId(e.id);
+    return ex?.risk?.includes("knees");
+  }),
+  "pain areas auto-swap at-risk exercises"
+);
+
+// ---- nutrition -------------------------------------------------------------
+const plan = computeNutrition(a);
+assert(plan.maintenance.calories > 1500 && plan.maintenance.calories < 4000, "maintenance calories in sane range");
+assert(plan.moderateCut.calories < plan.maintenance.calories, "cut below maintenance");
+assert(plan.aggressiveCut.calories < plan.moderateCut.calories, "aggressive cut below moderate cut");
+assert(plan.leanBulk.calories > plan.maintenance.calories, "bulk above maintenance");
+assert(plan.maintenance.proteinG >= 120, "protein grams are meaningful");
+assert(preferredTarget(a) === "maintenance", "goal maps to preferred target");
 
 console.log("\nTITLE:", p.title);
 console.log("\nWORKOUTS:");

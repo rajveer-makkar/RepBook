@@ -7,11 +7,12 @@ import { Input } from "@/components/ui/Input";
 interface Props {
   onSave: (name: string) => void;
   saving?: boolean;
+  defaultName?: string;
 }
 
-export default function SaveProgramButton({ onSave, saving }: Props) {
+export default function SaveProgramButton({ onSave, saving, defaultName = "My Program" }: Props) {
   const [open, setOpen] = useState(false);
-  const [name, setName] = useState("My Program");
+  const [name, setName] = useState(defaultName);
 
   if (!open) {
     return (

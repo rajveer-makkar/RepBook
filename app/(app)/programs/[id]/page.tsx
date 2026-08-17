@@ -2,7 +2,9 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import StickyHeader from "@/components/StickyHeader";
 import ProgramSwapper from "@/components/ProgramSwapper";
+import RenameProgram from "@/components/RenameProgram";
 import { buildProgram } from "@/lib/engine";
+import { fetchFeedbackSummary, toProp } from "@/lib/adaptive";
 import { deleteProgram, setActiveProgram } from "@/lib/actions/programs";
 import { createClient, getUser } from "@/lib/supabase/server";
 import type { Answers } from "@/lib/types";
@@ -21,7 +23,8 @@ export default async function ProgramDetailPage({ params }: { params: Promise<{ 
 
   if (!program) notFound();
 
-  const generated = buildProgram(program.answers as Parameters<typeof buildProgram>[0]);
+  const feedback = await fetchFeedbackSummary(supabase, user!.id);
+  const generated = buildProgram(program.answers as Parameters<typeof buildProgram>[0], feedback ?? undefined);
   const title = program.split_label || generated.title;
 
   return (
@@ -33,8 +36,11 @@ export default async function ProgramDetailPage({ params }: { params: Promise<{ 
       </StickyHeader>
 
       <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-zinc-800 bg-zinc-900 p-4">
-        <div>
-          <h1 className="text-xl font-bold text-zinc-100">{program.name}</h1>
+        <div className="min-w-0">
+          <div className="flex items-center gap-2">
+            <h1 className="truncate text-xl font-bold text-zinc-100">{program.name}</h1>
+            <RenameProgram programId={id} name={program.name} />
+          </div>
           <p className="text-sm text-zinc-400">{title}</p>
         </div>
         <div className="flex gap-2">
@@ -52,6 +58,12 @@ export default async function ProgramDetailPage({ params }: { params: Promise<{ 
               Active
             </span>
           )}
+          <Link
+            href={`/programs/${id}/edit`}
+            className="rounded-lg border border-zinc-700 px-3 py-2 text-sm font-medium text-zinc-300 transition hover:border-zinc-500 hover:text-zinc-100"
+          >
+            Edit
+          </Link>
           <form action={deleteProgram.bind(null, id)}>
             <button
               type="submit"
@@ -67,6 +79,7 @@ export default async function ProgramDetailPage({ params }: { params: Promise<{ 
         programId={id}
         program={{ ...generated, title, rationale: program.rationale || generated.rationale }}
         answers={program.answers as Answers}
+        feedback={feedback ? toProp(feedback) : null}
       />
     </div>
   );

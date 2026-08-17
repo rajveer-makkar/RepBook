@@ -15,7 +15,7 @@ export default function SyncPending() {
       if (items.length === 0 || !navigator.onLine) return;
       setSyncing(true);
       for (const item of items) {
-        const res = await persistCompletion(item.sessionId, item.logs);
+        const res = await persistCompletion(item.sessionId, item.logs, item.feedback);
         if (!res?.error) removePending(item.sessionId);
       }
       setSyncing(false);

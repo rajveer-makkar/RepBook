@@ -5,6 +5,7 @@ import type { Answers, ExerciseSwap, Program, SwapReason } from "@/lib/types";
 import { suggestReplacements } from "@/lib/engine";
 import SaveProgramButton from "@/components/SaveProgramButton";
 import StickyHeader from "@/components/StickyHeader";
+import NutritionCard from "@/components/NutritionCard";
 
 interface Props {
   program: Program;
@@ -18,6 +19,7 @@ interface Props {
   onSave?: (name: string) => void;
   saving?: boolean;
   saveError?: string;
+  defaultName?: string;
 }
 
 const SWAP_REASONS: { value: SwapReason; label: string }[] = [
@@ -171,6 +173,7 @@ export default function Results({
   onSave,
   saving,
   saveError,
+  defaultName,
 }: Props) {
   const [copied, setCopied] = useState(false);
 
@@ -237,7 +240,7 @@ export default function Results({
               {aiLoading ? "Writing…" : "✨ AI explain why this works"}
             </button>
           )}
-          {onSave && <SaveProgramButton onSave={onSave} saving={saving} />}
+          {onSave && <SaveProgramButton onSave={onSave} saving={saving} defaultName={defaultName} />}
           <button
             onClick={copyAll}
             className="rounded-lg bg-zinc-100 px-3 py-2 text-sm font-semibold text-zinc-900 transition active:scale-95 hover:bg-zinc-200"
@@ -300,6 +303,8 @@ export default function Results({
           ))}
         </div>
       </section>
+
+      {answers && <NutritionCard answers={answers} />}
 
       <section className="space-y-5">
         <h2 className="text-lg font-semibold text-zinc-100">Workouts</h2>

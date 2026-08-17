@@ -1,6 +1,7 @@
 import Link from "next/link";
 import StickyHeader from "@/components/StickyHeader";
 import { buildProgram } from "@/lib/engine";
+import { fetchFeedbackSummary } from "@/lib/adaptive";
 import { startTodaySession } from "@/lib/actions/sessions";
 import { createClient, getUser } from "@/lib/supabase/server";
 
@@ -39,8 +40,9 @@ export default async function DashboardPage() {
   const completed = sessions?.length ?? 0;
   const name = profile?.display_name || "there";
   const today = new Date().toLocaleDateString("en-US", { weekday: "long" });
+  const feedback = await fetchFeedbackSummary(supabase, user!.id);
   const active = activeProgram
-    ? { ...buildProgram(activeProgram.answers as Parameters<typeof buildProgram>[0]), id: activeProgram.id, name: activeProgram.name }
+    ? { ...buildProgram(activeProgram.answers as Parameters<typeof buildProgram>[0], feedback ?? undefined), id: activeProgram.id, name: activeProgram.name }
     : null;
   const todayIdx = active?.weeklySchedule.findIndex((s) => s.day === today) ?? -1;
   const todayWorkout = todayIdx >= 0 ? active?.weeklySchedule[todayIdx] : null;
@@ -58,6 +60,18 @@ export default async function DashboardPage() {
           </p>
         </div>
       </StickyHeader>
+
+      {feedback && (feedback.avgDifficulty >= 2 || feedback.pain.size > 0 || feedback.brutalStreak >= 2) && (
+        <div className="rounded-xl border border-sky-500/30 bg-sky-500/10 p-4 text-sm text-sky-300">
+          Adjusted for your last {feedback.count} session{feedback.count === 1 ? "" : "s"} —{" "}
+          {feedback.avgDifficulty >= 2 ? "volume trimmed and RIR raised to help you recover. " : ""}
+          {feedback.brutalStreak >= 2 ? "Your deload was pulled earlier. " : ""}
+          {feedback.pain.size > 0 ? "Pain-sensitive exercises were swapped out. " : ""}
+          <Link href="/history" className="font-semibold underline">
+            See history
+          </Link>
+        </div>
+      )}
 
       {inProgress ? (
         <Link

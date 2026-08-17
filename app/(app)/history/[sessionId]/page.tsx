@@ -11,7 +11,7 @@ export default async function SessionDetailPage({ params }: { params: Promise<{ 
 
   const { data: session } = await supabase
     .from("sessions")
-    .select("id, started_at, completed_at, status, notes, workout_templates(focus)")
+    .select("id, started_at, completed_at, status, notes, difficulty, performance, pain, feedback_notes, workout_templates(focus)")
     .eq("id", sessionId)
     .eq("user_id", user!.id)
     .single();
@@ -102,6 +102,32 @@ export default async function SessionDetailPage({ params }: { params: Promise<{ 
         <p className="text-sm text-zinc-400">
           {Object.keys(byExercise).length} exercises · {logs?.length ?? 0} sets · {Math.round(totalVolume)}kg total volume
         </p>
+      )}
+
+      {(session.difficulty || session.performance || (session.pain ?? []).length > 0 || session.feedback_notes) && (
+        <div className="rounded-xl border border-zinc-800 bg-zinc-900 p-4 text-sm">
+          <p className="mb-2 text-xs font-medium uppercase tracking-wide text-zinc-500">Feedback</p>
+          <div className="flex flex-wrap gap-1.5">
+            {session.difficulty && (
+              <span className="rounded-md bg-zinc-800 px-2 py-1 text-[11px] font-medium capitalize text-zinc-300">
+                {session.difficulty}
+              </span>
+            )}
+            {session.performance && (
+              <span className="rounded-md bg-zinc-800 px-2 py-1 text-[11px] font-medium capitalize text-zinc-300">
+                {session.performance} than last time
+              </span>
+            )}
+            {(session.pain ?? []).map((area: string) => (
+              <span key={area} className="rounded-md bg-red-500/10 px-2 py-1 text-[11px] font-medium text-red-300">
+                {area} pain
+              </span>
+            ))}
+          </div>
+          {session.feedback_notes && (
+            <p className="mt-2 text-sm text-zinc-400">{session.feedback_notes}</p>
+          )}
+        </div>
       )}
 
       {session.status !== "completed" && (

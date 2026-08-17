@@ -6,6 +6,7 @@ import { Notification01Icon, ArrowUp01Icon, ArrowDown01Icon } from "hugeicons-re
 import { completeSession } from "@/lib/actions/sessions";
 import { enqueuePending } from "@/lib/queue";
 import type { Suggestion } from "@/lib/progression";
+import type { InjuryId, SessionDifficulty, SessionFeedback, SessionPerformance } from "@/lib/types";
 import Button from "@/components/ui/Button";
 import StickyHeader from "@/components/StickyHeader";
 import { cn } from "@/lib/cn";
@@ -44,6 +45,21 @@ interface RestState {
 
 const STORAGE_PREFIX = "repbook-draft-";
 
+const DIFFICULTIES: { value: SessionDifficulty; label: string }[] = [
+  { value: "easy", label: "Easy" },
+  { value: "good", label: "Good" },
+  { value: "hard", label: "Hard" },
+  { value: "brutal", label: "Brutal" },
+];
+
+const PAIN_AREAS: { value: InjuryId; label: string }[] = [
+  { value: "knees", label: "Knees" },
+  { value: "shoulders", label: "Shoulders" },
+  { value: "lower-back", label: "Lower back" },
+  { value: "elbows", label: "Elbows" },
+  { value: "wrists", label: "Wrists" },
+];
+
 function emptyEntries(exercises: LoggerExercise[]): SetEntry[][] {
   return exercises.map((e) =>
     Array.from({ length: e.sets }, (_, i) => ({
@@ -68,6 +84,8 @@ export default function WorkoutLogger({ sessionId, focus, exercises, suggestions
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | undefined>();
   const [queued, setQueued] = useState(false);
+  const [showFeedback, setShowFeedback] = useState(false);
+  const [feedback, setFeedback] = useState<SessionFeedback>({ pain: [] });
   const [elapsed, setElapsed] = useState(0);
   const [rest, setRest] = useState<RestState>({ active: false, endsAt: 0, total: 0 });
   const [restLeft, setRestLeft] = useState(0);
@@ -143,10 +161,8 @@ export default function WorkoutLogger({ sessionId, focus, exercises, suggestions
     }
   };
 
-  const finish = async () => {
-    setSaving(true);
-    setError(undefined);
-    const logs = entries.flatMap((exerciseLog, ex) =>
+  const buildLogs = () =>
+    entries.flatMap((exerciseLog, ex) =>
       exerciseLog
         .filter((s) => s.done)
         .map((s) => ({
@@ -159,27 +175,32 @@ export default function WorkoutLogger({ sessionId, focus, exercises, suggestions
           is_completed: true,
         }))
     );
+
+  const submit = async (fb?: SessionFeedback) => {
+    setSaving(true);
+    setError(undefined);
+    const logs = buildLogs();
     try {
       localStorage.removeItem(STORAGE_PREFIX + sessionId);
     } catch {
       /* ignore */
     }
     if (!navigator.onLine) {
-      enqueuePending({ sessionId, logs });
+      enqueuePending({ sessionId, logs, feedback: fb });
       setQueued(true);
       setSaving(false);
       return;
     }
     try {
-      const res = await completeSession(sessionId, logs);
+      const res = await completeSession(sessionId, logs, fb);
       if (res?.error) {
-        enqueuePending({ sessionId, logs });
+        enqueuePending({ sessionId, logs, feedback: fb });
         setQueued(true);
         setSaving(false);
         return;
       }
     } catch {
-      enqueuePending({ sessionId, logs });
+      enqueuePending({ sessionId, logs, feedback: fb });
       setQueued(true);
       setSaving(false);
       return;
@@ -337,8 +358,108 @@ export default function WorkoutLogger({ sessionId, focus, exercises, suggestions
         <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 text-sm text-amber-300">
           Saved — will sync when you&apos;re back online.
         </div>
+      ) : showFeedback ? (
+        <div className="rounded-xl border border-zinc-800 bg-zinc-900 p-4">
+          <h3 className="mb-3 text-base font-semibold text-zinc-100">How did it go?</h3>
+
+          <p className="mb-1.5 text-xs font-medium uppercase tracking-wide text-zinc-500">Difficulty</p>
+          <div className="mb-3 flex gap-2">
+            {DIFFICULTIES.map((d) => (
+              <button
+                key={d.value}
+                type="button"
+                onClick={() => setFeedback((f) => ({ ...f, difficulty: d.value }))}
+                className={cn(
+                  "flex-1 rounded-lg border px-3 py-2 text-sm font-medium transition active:scale-95",
+                  feedback.difficulty === d.value
+                    ? "border-zinc-100 bg-zinc-100 text-zinc-900"
+                    : "border-zinc-700 text-zinc-300"
+                )}
+              >
+                {d.label}
+              </button>
+            ))}
+          </div>
+
+          <p className="mb-1.5 text-xs font-medium uppercase tracking-wide text-zinc-500">
+            Performance vs last time
+          </p>
+          <div className="mb-3 flex gap-2">
+            {(["better", "same", "worse"] as SessionPerformance[]).map((p) => (
+              <button
+                key={p}
+                type="button"
+                onClick={() => setFeedback((f) => ({ ...f, performance: p }))}
+                className={cn(
+                  "flex-1 rounded-lg border px-3 py-2 text-sm font-medium capitalize transition active:scale-95",
+                  feedback.performance === p
+                    ? "border-zinc-100 bg-zinc-100 text-zinc-900"
+                    : "border-zinc-700 text-zinc-300"
+                )}
+              >
+                {p}
+              </button>
+            ))}
+          </div>
+
+          <p className="mb-1.5 text-xs font-medium uppercase tracking-wide text-zinc-500">
+            Pain (tap any that hurt)
+          </p>
+          <div className="mb-3 flex flex-wrap gap-2">
+            {PAIN_AREAS.map((area) => {
+              const active = feedback.pain?.includes(area.value);
+              return (
+                <button
+                  key={area.value}
+                  type="button"
+                  onClick={() =>
+                    setFeedback((f) => ({
+                      ...f,
+                      pain: active
+                        ? (f.pain ?? []).filter((p) => p !== area.value)
+                        : [...(f.pain ?? []), area.value],
+                    }))
+                  }
+                  className={cn(
+                    "rounded-lg border px-3 py-1.5 text-sm font-medium transition active:scale-95",
+                    active
+                      ? "border-red-500/50 bg-red-500/10 text-red-300"
+                      : "border-zinc-700 text-zinc-400"
+                  )}
+                >
+                  {area.label}
+                </button>
+              );
+            })}
+          </div>
+
+          <textarea
+            value={feedback.notes ?? ""}
+            onChange={(e) => setFeedback((f) => ({ ...f, notes: e.target.value }))}
+            placeholder="Notes (optional)"
+            rows={2}
+            className="mb-3 w-full rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-zinc-100 outline-none focus:border-zinc-500"
+          />
+
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => setShowFeedback(false)} className="flex-1">
+              Back
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => submit()}
+              loading={saving}
+              className="flex-1"
+            >
+              Skip
+            </Button>
+            <Button onClick={() => submit(feedback)} loading={saving} className="flex-1">
+              Submit
+            </Button>
+          </div>
+        </div>
       ) : (
-        <Button onClick={finish} loading={saving} className="sticky bottom-16">
+        <Button onClick={() => setShowFeedback(true)} className="sticky bottom-16">
           Finish workout
         </Button>
       )}

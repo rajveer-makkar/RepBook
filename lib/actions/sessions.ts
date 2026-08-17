@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { buildProgram } from "@/lib/engine";
 import { createClient, getUser } from "@/lib/supabase/server";
-import type { Answers } from "@/lib/types";
+import type { Answers, SessionFeedback } from "@/lib/types";
 
 export interface SetLogInput {
   exercise_template_id: string | null;
@@ -68,7 +68,7 @@ export async function startTodaySession() {
   redirect(error ? "/dashboard" : `/workout/${session.id}`);
 }
 
-export async function persistCompletion(sessionId: string, logs: SetLogInput[]) {
+export async function persistCompletion(sessionId: string, logs: SetLogInput[], feedback?: SessionFeedback) {
   const user = await getUser();
   if (!user) return { error: "Not signed in." };
   const supabase = await createClient();
@@ -82,7 +82,14 @@ export async function persistCompletion(sessionId: string, logs: SetLogInput[]) 
 
   const { error } = await supabase
     .from("sessions")
-    .update({ status: "completed", completed_at: new Date().toISOString() })
+    .update({
+      status: "completed",
+      completed_at: new Date().toISOString(),
+      ...(feedback?.difficulty ? { difficulty: feedback.difficulty } : {}),
+      ...(feedback?.performance ? { performance: feedback.performance } : {}),
+      ...(feedback?.pain?.length ? { pain: feedback.pain } : {}),
+      ...(feedback?.notes ? { feedback_notes: feedback.notes } : {}),
+    })
     .eq("id", sessionId)
     .eq("user_id", user.id);
   if (error) return { error: error.message };
@@ -92,8 +99,8 @@ export async function persistCompletion(sessionId: string, logs: SetLogInput[]) 
   return { error: null };
 }
 
-export async function completeSession(sessionId: string, logs: SetLogInput[]) {
-  const res = await persistCompletion(sessionId, logs);
+export async function completeSession(sessionId: string, logs: SetLogInput[], feedback?: SessionFeedback) {
+  const res = await persistCompletion(sessionId, logs, feedback);
   if (res?.error) return res;
   redirect(`/history/${sessionId}`);
 }

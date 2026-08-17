@@ -1,5 +1,7 @@
 const KEY = "repbook-pending";
 
+import type { SessionFeedback } from "@/lib/types";
+
 export interface QueuedCompletion {
   sessionId: string;
   logs: Array<{
@@ -11,6 +13,7 @@ export interface QueuedCompletion {
     rir_felt: number | null;
     is_completed: boolean;
   }>;
+  feedback?: SessionFeedback;
 }
 
 // ponytail: localStorage queue, flushed on "online" event. iOS has no Background

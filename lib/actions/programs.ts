@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { buildProgram } from "@/lib/engine";
 import { createClient, getUser } from "@/lib/supabase/server";
 import type { Answers, ExerciseSwap } from "@/lib/types";
+import type { FeedbackSummary } from "@/lib/adaptive";
 
 export interface SaveResult {
   ok: boolean;
@@ -25,13 +26,14 @@ function parseRest(rest: string): number {
 export async function saveProgram(
   name: string,
   answers: Answers,
-  rationale: string
+  rationale: string,
+  feedback?: FeedbackSummary
 ): Promise<SaveResult> {
   const user = await getUser();
   if (!user) return { ok: false, error: "Not signed in." };
 
   const supabase = await createClient();
-  const program = buildProgram(answers);
+  const program = buildProgram(answers, feedback);
 
   const { count } = await supabase
     .from("programs")
@@ -140,4 +142,101 @@ export async function deleteProgram(id: string) {
   await supabase.from("programs").delete().eq("id", id).eq("user_id", user.id);
   revalidatePath("/programs");
   revalidatePath("/dashboard");
+}
+
+export async function renameProgram(id: string, name: string) {
+  const user = await getUser();
+  if (!user) return { ok: false, error: "Not signed in." };
+  const supabase = await createClient();
+
+  const { error } = await supabase
+    .from("programs")
+    .update({ name: name.trim() || "My Program" })
+    .eq("id", id)
+    .eq("user_id", user.id);
+  if (error) return { ok: false, error: error.message };
+
+  revalidatePath(`/programs/${id}`);
+  revalidatePath("/programs");
+  return { ok: true };
+}
+
+async function replaceTemplates(supabase: NonNullable<Awaited<ReturnType<typeof createClient>>>, programId: string, answers: Answers, feedback?: FeedbackSummary) {
+  const program = buildProgram(answers, feedback);
+  const title = program.title;
+
+  await supabase.from("exercise_templates").delete().in(
+    "workout_template_id",
+    (await supabase.from("workout_templates").select("id").eq("program_id", programId)).data?.map((t) => t.id) ?? []
+  );
+  await supabase.from("workout_templates").delete().eq("program_id", programId);
+
+  const templateRows = program.workouts.map((w, i) => ({
+    program_id: programId,
+    day_name: program.weeklySchedule[i]?.day ?? null,
+    focus: w.focus,
+    position: i,
+    duration_min: w.durationMin,
+  }));
+
+  const { data: wtData, error: wtErr } = await supabase
+    .from("workout_templates")
+    .insert(templateRows)
+    .select("id");
+
+  if (!wtErr && wtData) {
+    const exRows = wtData.flatMap((wt, wi) =>
+      program.workouts[wi].exercises.map((e, ei) => {
+        const [repsMin, repsMax] = parseReps(e.reps);
+        return {
+          workout_template_id: wt.id,
+          exercise_id: e.id,
+          name: e.name,
+          position: ei,
+          sets: e.sets,
+          reps_min: repsMin,
+          reps_max: repsMax,
+          reps_label: repsMin === null ? e.reps : null,
+          rir: e.rir,
+          rest_sec: parseRest(e.rest),
+          notes: e.notes ?? null,
+        };
+      })
+    );
+    await supabase.from("exercise_templates").insert(exRows);
+  }
+
+  return { ok: true, title };
+}
+
+export async function updateProgram(
+  id: string,
+  name: string,
+  answers: Answers,
+  rationale: string,
+  feedback?: FeedbackSummary
+): Promise<SaveResult> {
+  const user = await getUser();
+  if (!user) return { ok: false, error: "Not signed in." };
+  const supabase = await createClient();
+
+  const res = await replaceTemplates(supabase, id, answers, feedback);
+  if (!res.ok) return res;
+
+  const { error } = await supabase
+    .from("programs")
+    .update({
+      name: name.trim() || "My Program",
+      answers,
+      split_label: res.title,
+      rationale: rationale || null,
+    })
+    .eq("id", id)
+    .eq("user_id", user.id);
+  if (error) return { ok: false, error: error.message };
+
+  revalidatePath(`/programs/${id}`);
+  revalidatePath("/programs");
+  revalidatePath("/dashboard");
+  return { ok: true, id };
 }

@@ -1,4 +1,5 @@
 import { EXERCISES, byId } from "./exercises";
+import type { FeedbackSummary } from "./adaptive";
 import type {
   Answers,
   Exercise,
@@ -422,9 +423,9 @@ function buildProgression(a: Answers): string[] {
   return x;
 }
 
-function buildDeload(): Program["deload"] {
+function buildDeload(deloadWeek = 6): Program["deload"] {
   return {
-    when: "Every 6-7 weeks, or earlier if you notice 2+ of: reps stalling across multiple lifts, joints (especially knees) feeling achy rather than just worked, motivation/sleep tanking, or grinding through sessions.",
+    when: `Every ${deloadWeek}-${deloadWeek + 1} weeks, or earlier if you notice 2+ of: reps stalling across multiple lifts, joints (especially knees) feeling achy rather than just worked, motivation/sleep tanking, or grinding through sessions.`,
     how: [
       "Cut sets per exercise by ~40% (e.g. 4 sets → 2-3).",
       "Drop weight by ~10-20% on everything.",
@@ -487,14 +488,15 @@ function buildSubstitutions(workouts: WorkoutDay[], a: Answers): Program["substi
   return out;
 }
 
-function build12Week(): Program["twelveWeek"] {
+function build12Week(deloadWeek = 6): Program["twelveWeek"] {
+  const second = `${deloadWeek + 1}-${deloadWeek + 3}`;
   return [
     { weeks: "1-2", focus: "Establish baseline weights on every lift at the prescribed RIR. Don't chase big jumps yet — lock in movement patterns and the logging habit." },
-    { weeks: "3-5", focus: "Standard progression block — double progression on every lift; weight goes up as rep targets are met." },
-    { weeks: "6", focus: "Deload week — reduced volume and intensity as described above." },
-    { weeks: "7-9", focus: "Second progression block — you should be moving noticeably more weight than weeks 1-2." },
-    { weeks: "10-11", focus: "Keep progressing; push last-set RIR down toward 0-1 on compounds as fatigue builds." },
-    { weeks: "12", focus: "Deload, then reassess: progress photos, waist measurement, and strength numbers vs week 1. Decide whether to keep the deficit, adjust calories, or shift toward a lean bulk." },
+    { weeks: "3-" + (deloadWeek - 1), focus: "Standard progression block — double progression on every lift; weight goes up as rep targets are met." },
+    { weeks: String(deloadWeek), focus: "Deload week — reduced volume and intensity as described above." },
+    { weeks: second, focus: "Second progression block — you should be moving noticeably more weight than weeks 1-2." },
+    { weeks: `${deloadWeek + 4}-${deloadWeek + 5}`, focus: "Keep progressing; push last-set RIR down toward 0-1 on compounds as fatigue builds." },
+    { weeks: `${deloadWeek + 6}-12`, focus: "Deload, then reassess: progress photos, waist measurement, and strength numbers vs week 1. Decide whether to keep the deficit, adjust calories, or shift toward a lean bulk." },
   ];
 }
 
@@ -586,8 +588,36 @@ export function suggestReplacements(fromId: string, reason: SwapReason, a: Answe
 }
 
 // ---- Build -----------------------------------------------------------------
-export function buildProgram(a: Answers): Program {
-  const split = pickSplit(a);
+function adaptForFeedback(a: Answers, fb?: FeedbackSummary): { answers: Answers; deloadWeek: number } {
+  if (!fb || fb.count === 0) return { answers: a, deloadWeek: 6 };
+  const answers = { ...a };
+  if (fb.avgDifficulty >= 2.5 && answers.recoveryLevel === "medium") answers.recoveryLevel = "low";
+  if (fb.avgDifficulty >= 2 && answers.intensityPref === "moderate") answers.intensityPref = "easy";
+  if (fb.avgDifficulty >= 2 && answers.intensityPref === "hard") answers.intensityPref = "moderate";
+  if (fb.avgDifficulty <= 0.75 && answers.recoveryLevel === "medium") answers.recoveryLevel = "high";
+  const deloadWeek = fb.brutalStreak >= 2 ? 4 : 6;
+  return { answers, deloadWeek };
+}
+
+function painAutoSwaps(program: Program, fb?: FeedbackSummary, a?: Answers): ExerciseSwap[] {
+  if (!fb || !a || fb.pain.size === 0) return [];
+  const swaps: ExerciseSwap[] = [];
+  const seen = new Set<string>();
+  for (const day of program.workouts)
+    for (const e of day.exercises) {
+      if (seen.has(e.id)) continue;
+      const ex = byId(e.id);
+      if (!ex?.risk || !ex.risk.some((r) => fb.pain.has(r))) continue;
+      seen.add(e.id);
+      const repl = suggestReplacements(e.id, "pain", a)[0];
+      if (repl) swaps.push({ from: e.id, to: repl.id, reason: "pain" });
+    }
+  return swaps;
+}
+
+export function buildProgram(a: Answers, feedback?: FeedbackSummary): Program {
+  const { answers, deloadWeek } = adaptForFeedback(a, feedback);
+  const split = pickSplit(answers);
   const byIdMap: Record<string, DayTemplate> = {
     push: PUSH,
     pull: PULL,
@@ -598,14 +628,14 @@ export function buildProgram(a: Answers): Program {
     "full-a": FULL_BODY_A,
     "full-b": FULL_BODY_B,
   };
-  const preferred = a.preferredDaysFixed === false ? null : a.preferredDays;
+  const preferred = answers.preferredDaysFixed === false ? null : answers.preferredDays;
   const scheduleDays = (
-    preferred && preferred.length === a.daysPerWeek
+    preferred && preferred.length === answers.daysPerWeek
       ? preferred
-      : DEFAULT_DAYS[a.daysPerWeek] ?? DEFAULT_DAYS[5]
+      : DEFAULT_DAYS[answers.daysPerWeek] ?? DEFAULT_DAYS[5]
   ) as string[];
 
-  const workouts = split.templateIds.map((id) => buildDay(byIdMap[id], a));
+  const workouts = split.templateIds.map((id) => buildDay(byIdMap[id], answers));
 
   // priority muscles: +1 set on first slot that targets them, capped at 2/day
   let workoutsAfter = workouts.map((w) => {
@@ -613,7 +643,7 @@ export function buildProgram(a: Answers): Program {
     const exercises = w.exercises.map((e) => {
       const ex = byId(e.id);
       if (!ex) return e;
-      const hit = ex.muscles.find((m) => a.priorityMuscles.includes(m) && !boosted.has(m));
+      const hit = ex.muscles.find((m) => answers.priorityMuscles.includes(m) && !boosted.has(m));
       if (hit && boosted.size < 2) {
         boosted.add(hit);
         return { ...e, sets: e.sets + 1, notes: (e.notes ? e.notes + " " : "") + "Priority muscle — +1 set." };
@@ -625,35 +655,35 @@ export function buildProgram(a: Answers): Program {
 
   // hard rule: never exceed session cap — trim AFTER the priority boost
   workoutsAfter = workoutsAfter.map((w) => {
-    const exercises = trimToSession(w.exercises, a.sessionMin);
+    const exercises = trimToSession(w.exercises, answers.sessionMin);
     return { ...w, exercises, durationMin: estimateMinutes(exercises) };
   });
 
   let program: Program = {
     title: `${split.label} — Recomp Program`,
-    rationale: buildRationale(a, split),
+    rationale: buildRationale(answers, split),
     weeklySchedule: [],
     workouts: workoutsAfter,
     weeklyVolume: weeklyVolume(workoutsAfter),
-    progression: buildProgression(a),
-    deload: buildDeload(),
+    progression: buildProgression(answers),
+    deload: buildDeload(deloadWeek),
     warmup: buildWarmup(),
-    cardio: buildCardio(a),
-    core: (a.corePref ?? "auto") === "no"
+    cardio: buildCardio(answers),
+    core: (answers.corePref ?? "auto") === "no"
       ? "No dedicated core work — skipped by your preference. Optional: 2 sets of plank or hanging knee raises at the end of Lower day."
       : "Direct ab work is built into the Lower day (cable crunch, knee raises, plank). It builds thickness and shape, but visible abs come overwhelmingly from body fat — consistency with your nutrition does more than extra crunches.",
-    substitutions: buildSubstitutions(workoutsAfter, a),
-    twelveWeek: build12Week(),
+    substitutions: buildSubstitutions(workoutsAfter, answers),
+    twelveWeek: build12Week(deloadWeek),
     warnings: [],
   };
 
-  program = applySwaps(program, a.swaps ?? []);
+  program = applySwaps(program, [...(answers.swaps ?? []), ...painAutoSwaps(program, feedback, a)]);
   program.weeklySchedule = scheduleDays.map((day, i) => ({
     day,
     focus: program.workouts[i % program.workouts.length].focus,
     durationMin: program.workouts[i % program.workouts.length].durationMin,
   }));
-  program.warnings = validate(program, a);
+  program.warnings = validate(program, answers);
 
   return program;
 }

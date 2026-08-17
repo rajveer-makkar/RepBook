@@ -49,6 +49,15 @@ export type Severity = "mild" | "moderate" | "severe";
 export type CorePref = "auto" | "yes" | "no";
 export type CardioPref = "none" | "steady" | "hiit";
 export type SwapReason = "equipment" | "injury" | "pain" | "dislike" | "other";
+export type SessionDifficulty = "easy" | "good" | "hard" | "brutal";
+export type SessionPerformance = "better" | "same" | "worse";
+
+export interface SessionFeedback {
+  difficulty?: SessionDifficulty;
+  performance?: SessionPerformance;
+  pain?: InjuryId[];
+  notes?: string;
+}
 
 export interface InjuryDetail {
   severity: Severity;
