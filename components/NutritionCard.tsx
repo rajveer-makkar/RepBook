@@ -1,10 +1,11 @@
 "use client";
 
+import Link from "next/link";
 import { computeNutrition, preferredTarget } from "@/lib/nutrition";
 import type { NutritionPlan } from "@/lib/nutrition";
 import type { Answers } from "@/lib/types";
 
-const LABELS: Record<keyof NutritionPlan, { name: string; desc: string }> = {
+export const NUTRITION_LABELS: Record<keyof NutritionPlan, { name: string; desc: string }> = {
   maintenance: { name: "Maintenance", desc: "Stay at current weight" },
   moderateCut: { name: "Moderate cut", desc: "~15% deficit" },
   aggressiveCut: { name: "Aggressive cut", desc: "~25% deficit" },
@@ -14,6 +15,7 @@ const LABELS: Record<keyof NutritionPlan, { name: string; desc: string }> = {
 export default function NutritionCard({ answers }: { answers: Answers }) {
   const plan = computeNutrition(answers);
   const active = preferredTarget(answers);
+  const labels = NUTRITION_LABELS;
 
   return (
     <section className="rounded-xl border border-zinc-800 bg-zinc-900 p-5">
@@ -25,12 +27,13 @@ export default function NutritionCard({ answers }: { answers: Answers }) {
       <div className="grid grid-cols-2 gap-2">
         {(Object.keys(plan) as (keyof NutritionPlan)[]).map((key) => {
           const t = plan[key];
-          const label = LABELS[key];
+          const label = labels[key];
           const isActive = key === active;
           return (
-            <div
+            <Link
               key={key}
-              className={`rounded-lg border p-3 ${
+              href={`/nutrition/${key}`}
+              className={`rounded-lg border p-3 transition active:scale-[0.98] ${
                 isActive ? "border-zinc-100 bg-zinc-800" : "border-zinc-800 bg-zinc-900"
               }`}
             >
@@ -47,7 +50,7 @@ export default function NutritionCard({ answers }: { answers: Answers }) {
               <p className="mt-1 text-xs tabular-nums text-zinc-400">
                 P {t.proteinG}g · C {t.carbsG}g · F {t.fatG}g
               </p>
-            </div>
+            </Link>
           );
         })}
       </div>
